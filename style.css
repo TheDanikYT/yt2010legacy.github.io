@@ -1,0 +1,434 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Verdana', 'Arial', 'Helvetica', sans-serif;
+    background: #c0c0c0;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23c0c0c0"/><path d="M10 10 L90 10 M10 20 L90 20 M10 30 L90 30 M10 40 L90 40 M10 50 L90 50 M10 60 L90 60 M10 70 L90 70 M10 80 L90 80 M10 90 L90 90 M10 10 L10 90 M20 10 L20 90 M30 10 L30 90 M40 10 L40 90 M50 10 L50 90 M60 10 L60 90 M70 10 L70 90 M80 10 L80 90 M90 10 L90 90" stroke="%23a0a0a0" stroke-width="0.5" fill="none"/></svg>');
+    color: #333;
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    background: #ffffff;
+    border: 2px solid #808080;
+    box-shadow: 5px 5px 10px rgba(0,0,0,0.3);
+}
+
+/* Шапка в стиле 2010 */
+.youtube-header {
+    background: linear-gradient(to bottom, #f9f9f9 0%, #e8e8e8 100%);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #cc181e;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.logo-area {
+    cursor: pointer;
+}
+
+.logo {
+    font-size: 32px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+}
+
+.youtube-text {
+    color: #cc181e;
+    letter-spacing: -1px;
+}
+
+.tube-text {
+    color: #282828;
+    letter-spacing: -1px;
+}
+
+.tagline {
+    font-size: 9px;
+    color: #666;
+    margin-top: 2px;
+    font-style: italic;
+    letter-spacing: 0.5px;
+}
+
+.search-area {
+    display: flex;
+    gap: 8px;
+}
+
+.search-input {
+    width: 400px;
+    padding: 8px 12px;
+    border: 2px inset #ddd;
+    font-size: 13px;
+    background: white;
+    font-family: 'Courier New', monospace;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #cc181e;
+}
+
+.search-btn, .upload-btn, .login-btn, .logout-btn {
+    padding: 8px 16px;
+    background: linear-gradient(to bottom, #f0f0f0 0%, #d8d8d8 100%);
+    border: 1px solid #808080;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    color: #333;
+    font-family: 'Verdana', sans-serif;
+    text-transform: uppercase;
+}
+
+.search-btn:active, .upload-btn:active, .login-btn:active, .logout-btn:active {
+    background: linear-gradient(to bottom, #d8d8d8 0%, #f0f0f0 100%);
+    border: 1px inset #808080;
+}
+
+.upload-btn {
+    background: linear-gradient(to bottom, #cc181e 0%, #aa1419 100%);
+    color: white;
+    border-color: #8a1015;
+}
+
+.upload-btn:hover {
+    background: linear-gradient(to bottom, #aa1419 0%, #cc181e 100%);
+}
+
+/* Навигация */
+.youtube-nav {
+    background: #f0f0f0;
+    border-bottom: 1px solid #c0c0c0;
+    padding: 0 20px;
+    box-shadow: inset 0 1px 0 white, 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.youtube-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 25px;
+}
+
+.youtube-nav li a {
+    display: block;
+    padding: 10px 0;
+    color: #555;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: bold;
+    font-family: 'Verdana', sans-serif;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+}
+
+.youtube-nav li a:hover {
+    color: #cc181e;
+    border-bottom-color: #cc181e;
+}
+
+.youtube-nav li a.active {
+    color: #cc181e;
+    border-bottom-color: #cc181e;
+}
+
+/* Основной контент */
+.main-content {
+    display: flex;
+    padding: 20px;
+    gap: 20px;
+    background: white;
+}
+
+/* Сайдбар */
+.sidebar {
+    width: 220px;
+}
+
+.categories, .stats {
+    background: #f5f5f5;
+    border: 1px solid #d0d0d0;
+    margin-bottom: 20px;
+    padding: 12px;
+}
+
+.categories h3, .stats h3 {
+    font-size: 12px;
+    margin-bottom: 10px;
+    color: #cc181e;
+    font-family: 'Verdana', sans-serif;
+    text-transform: uppercase;
+    border-bottom: 1px solid #d0d0d0;
+    padding-bottom: 5px;
+}
+
+.categories ul {
+    list-style: none;
+}
+
+.categories li {
+    margin-bottom: 6px;
+}
+
+.categories a {
+    color: #0066cc;
+    text-decoration: none;
+    font-size: 11px;
+    font-family: 'Verdana', sans-serif;
+}
+
+.categories a:hover {
+    color: #cc181e;
+    text-decoration: underline;
+}
+
+.stats p {
+    font-size: 11px;
+    margin: 5px 0;
+    color: #666;
+}
+
+.stats span {
+    color: #cc181e;
+    font-weight: bold;
+}
+
+/* Сетка видео */
+.videos-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.video-card {
+    background: white;
+    border: 1px solid #c0c0c0;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.video-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 6px rgba(0,0,0,0.2);
+    border-color: #cc181e;
+}
+
+.video-thumbnail {
+    position: relative;
+    background: #000;
+    height: 160px;
+    overflow: hidden;
+    border-bottom: 1px solid #c0c0c0;
+}
+
+.video-thumbnail iframe {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.video-duration {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(0,0,0,0.75);
+    color: white;
+    padding: 2px 5px;
+    font-size: 10px;
+    font-family: 'Courier New', monospace;
+    border-radius: 2px;
+}
+
+.video-info {
+    padding: 10px;
+    background: #fafafa;
+}
+
+.video-title {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #0066cc;
+    text-decoration: none;
+    display: block;
+    font-family: 'Verdana', sans-serif;
+}
+
+.video-title:hover {
+    color: #cc181e;
+    text-decoration: underline;
+}
+
+.video-author {
+    font-size: 10px;
+    color: #666;
+    margin-bottom: 5px;
+    font-family: 'Verdana', sans-serif;
+}
+
+.video-stats {
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.video-description {
+    font-size: 10px;
+    color: #666;
+    line-height: 1.3;
+    margin-top: 5px;
+    font-family: 'Verdana', sans-serif;
+}
+
+.category-badge {
+    display: inline-block;
+    background: #e8e8e8;
+    padding: 2px 6px;
+    font-size: 9px;
+    margin-top: 5px;
+    border: 1px solid #c0c0c0;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+/* Модальные окна */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+}
+
+.modal-content {
+    background: #f0f0f0;
+    margin: 5% auto;
+    padding: 20px;
+    width: 400px;
+    border: 2px solid #808080;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-content h2 {
+    color: #cc181e;
+    font-size: 18px;
+    margin-bottom: 15px;
+    font-family: 'Verdana', sans-serif;
+    border-bottom: 1px solid #c0c0c0;
+    padding-bottom: 5px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+    font-family: 'Verdana', sans-serif;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 2px inset #c0c0c0;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: #cc181e;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(to bottom, #cc181e 0%, #aa1419 100%);
+    color: white;
+    border: 1px solid #8a1015;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-family: 'Verdana', sans-serif;
+}
+
+.submit-btn:hover {
+    background: linear-gradient(to bottom, #aa1419 0%, #cc181e 100%);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #cc181e;
+}
+
+.modal-link {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 11px;
+}
+
+.modal-link a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.modal-link a:hover {
+    color: #cc181e;
+    text-decoration: underline;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+    }
+    
+    .search-input {
+        width: 200px;
+    }
+    
+    .youtube-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .search-area {
+        width: 100%;
+    }
+}

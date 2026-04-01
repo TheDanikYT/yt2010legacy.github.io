@@ -5,12 +5,278 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube 2008 - Classic</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Весь остальной код такой же, но добавляем новые модалки -->
+    <div class="wrapper">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="logo-area" onclick="location.reload()">
+                <div class="youtube-logo">
+                    <span class="red">You</span><span class="dark">Tube</span>
+                </div>
+                <div class="tagline">Broadcast Yourself</div>
+            </div>
+            <div class="search-area">
+                <input type="text" id="searchInput" placeholder="Search" class="search-field">
+                <button id="searchBtn" class="search-submit">Search</button>
+            </div>
+            <div class="user-area">
+                <div id="unauthButtons">
+                    <button id="loginBtn" class="nav-btn">Sign In</button>
+                    <button id="registerBtn" class="nav-btn">Sign Up</button>
+                </div>
+                <div id="authButtons" style="display:none;">
+                    <span id="usernameSpan" class="username"></span>
+                    <span id="verifiedBadge" class="verified-badge" style="display:none;">✓</span>
+                    <button id="studioBtn" class="studio-btn">Studio</button>
+                    <button id="uploadTopBtn" class="upload-btn">Upload</button>
+                    <button id="logoutBtn" class="nav-btn">Sign Out</button>
+                </div>
+            </div>
+        </div>
 
-    <!-- YouTube Studio - НОВЫЙ ДИЗАЙН -->
+        <!-- Навигация -->
+        <div class="top-nav">
+            <a href="#" data-category="all" class="nav-item active">Home</a>
+            <a href="#" data-category="popular" class="nav-item">Popular</a>
+            <a href="#" data-category="recent" class="nav-item">Recent</a>
+            <a href="#" data-category="shorts" class="nav-item">Shorts</a>
+            <a href="#" data-category="my" class="nav-item">My Videos</a>
+            <a href="#" id="adminPanelBtn" class="nav-item admin-link" style="display:none;">Admin</a>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="main-row">
+            <!-- Сайдбар -->
+            <div class="left-sidebar">
+                <div class="sidebar-box">
+                    <h4>Categories</h4>
+                    <ul class="cat-list">
+                        <li><a href="#" data-category="all">📺 All Videos</a></li>
+                        <li><a href="#" data-category="music">🎵 Music</a></li>
+                        <li><a href="#" data-category="gaming">🎮 Gaming</a></li>
+                        <li><a href="#" data-category="comedy">😂 Comedy</a></li>
+                        <li><a href="#" data-category="education">📚 Education</a></li>
+                        <li><a href="#" data-category="shorts">📱 Shorts</a></li>
+                    </ul>
+                </div>
+                <div class="sidebar-box">
+                    <h4>Stats</h4>
+                    <div class="stats-info">
+                        <p>👥 Users: <span id="statUsers">0</span></p>
+                        <p>🎬 Videos: <span id="statVideos">0</span></p>
+                        <p>📱 Shorts: <span id="statShorts">0</span></p>
+                        <p>✓ Verified: <span id="statVerified">0</span></p>
+                    </div>
+                </div>
+                <div class="sidebar-box">
+                    <button id="uploadSideBtn" class="side-upload-btn">📹 Upload Video</button>
+                    <button id="uploadShortSideBtn" class="side-upload-btn short">📱 Upload Short</button>
+                </div>
+            </div>
+
+            <!-- Сетка видео -->
+            <div class="content-area">
+                <div id="videosContainer" class="video-grid">
+                    <div class="loading-spinner">Loading videos...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка загрузки -->
+    <div id="uploadWindow" class="modal">
+        <div class="modal-inner">
+            <div class="modal-head">
+                <h3>Upload Video</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="uploadVideoForm">
+                <div class="form-row">
+                    <label>Source:</label>
+                    <select id="sourceType" class="form-input">
+                        <option value="youtube">YouTube URL</option>
+                        <option value="file">Video File (MP4)</option>
+                    </select>
+                </div>
+                <div class="form-row" id="youtubeRow">
+                    <label>YouTube URL:</label>
+                    <input type="text" id="youtubeLink" class="form-input" placeholder="https://youtube.com/watch?v=...">
+                </div>
+                <div class="form-row" id="fileRow" style="display:none;">
+                    <label>Video File:</label>
+                    <input type="file" id="videoFileUpload" accept="video/mp4,video/webm" class="form-input">
+                    <small>Max 100MB</small>
+                </div>
+                <div class="form-row">
+                    <label>Title:</label>
+                    <input type="text" id="videoTitleInput" class="form-input" required>
+                </div>
+                <div class="form-row">
+                    <label>Category:</label>
+                    <select id="videoCategorySelect" class="form-input">
+                        <option value="music">Music</option>
+                        <option value="gaming">Gaming</option>
+                        <option value="comedy">Comedy</option>
+                        <option value="education">Education</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>Description:</label>
+                    <textarea id="videoDescInput" rows="3" class="form-input"></textarea>
+                </div>
+                <div class="form-row">
+                    <label>
+                        <input type="checkbox" id="shortCheckbox"> This is a Short (vertical video)
+                    </label>
+                </div>
+                <button type="submit" class="publish-btn">Publish</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка входа -->
+    <div id="loginWindow" class="modal">
+        <div class="modal-inner">
+            <div class="modal-head">
+                <h3>Sign In</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="loginFormData">
+                <div class="form-row">
+                    <label>Email:</label>
+                    <input type="email" id="loginEmailField" class="form-input" required>
+                </div>
+                <div class="form-row">
+                    <label>Password:</label>
+                    <input type="password" id="loginPasswordField" class="form-input" required>
+                </div>
+                <button type="submit" class="publish-btn">Sign In</button>
+                <p class="form-footer">No account? <a href="#" id="showRegLink">Sign Up</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка регистрации -->
+    <div id="registerWindow" class="modal">
+        <div class="modal-inner">
+            <div class="modal-head">
+                <h3>Sign Up</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="registerFormData">
+                <div class="form-row">
+                    <label>Username:</label>
+                    <input type="text" id="regUsernameField" class="form-input" required>
+                </div>
+                <div class="form-row">
+                    <label>Email:</label>
+                    <input type="email" id="regEmailField" class="form-input" required>
+                </div>
+                <div class="form-row">
+                    <label>Password:</label>
+                    <input type="password" id="regPasswordField" class="form-input" required>
+                </div>
+                <button type="submit" class="publish-btn">Sign Up</button>
+                <p class="form-footer">Have account? <a href="#" id="showLoginLink">Sign In</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка плеера -->
+    <div id="playerWindow" class="modal player-modal">
+        <div class="modal-inner player-inner">
+            <div class="modal-head">
+                <h3 id="playerTitleText"></h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div id="playerContainer" class="player-box"></div>
+            <div class="player-info">
+                <p><strong>Author:</strong> <span id="playerAuthorText"></span> <span id="playerVerifiedBadge" class="verified-badge-small" style="display:none;">✓</span></p>
+                <p><strong>Views:</strong> <span id="playerViewsText"></span></p>
+                <p><strong>Category:</strong> <span id="playerCategoryText"></span></p>
+                <p id="playerDescText"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube Studio панель -->
+    <div id="studioWindow" class="modal studio-modal">
+        <div class="modal-inner studio-inner">
+            <div class="modal-head">
+                <h3>YouTube Studio</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="studio-tabs">
+                <button class="studio-tab active" data-tab="videos">My Videos</button>
+                <button class="studio-tab" data-tab="analytics">Analytics</button>
+                <button class="studio-tab" data-tab="settings">Channel Settings</button>
+            </div>
+            <div id="studioVideosTab" class="studio-tab-content active">
+                <div id="myVideosList" class="studio-videos-list"></div>
+            </div>
+            <div id="studioAnalyticsTab" class="studio-tab-content" style="display:none;">
+                <div class="analytics-stats">
+                    <div class="analytics-card">
+                        <h4>Total Views</h4>
+                        <p id="studioTotalViews">0</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>Total Videos</h4>
+                        <p id="studioTotalVideos">0</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>Total Shorts</h4>
+                        <p id="studioTotalShorts">0</p>
+                    </div>
+                </div>
+                <canvas id="viewsChart" width="400" height="200" style="background:#fff; margin-top:20px;"></canvas>
+            </div>
+            <div id="studioSettingsTab" class="studio-tab-content" style="display:none;">
+                <div class="form-row">
+                    <label>Channel Name:</label>
+                    <input type="text" id="channelName" class="form-input">
+                </div>
+                <div class="form-row">
+                    <label>Channel Description:</label>
+                    <textarea id="channelDesc" rows="3" class="form-input"></textarea>
+                </div>
+                <button id="saveChannelSettings" class="publish-btn">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Админ панель -->
+    <div id="adminWindow" class="modal admin-modal">
+        <div class="modal-inner admin-inner">
+            <div class="modal-head">
+                <h3>Admin Panel</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-tab="users">Users Management</button>
+                <button class="admin-tab" data-tab="videos">Videos Management</button>
+                <button class="admin-tab" data-tab="reports">Reports</button>
+            </div>
+            <div id="adminUsersTab" class="admin-tab-content active">
+                <div id="usersList" class="admin-users-list"></div>
+            </div>
+            <div id="adminVideosTab" class="admin-tab-content" style="display:none;">
+                <div id="adminVideosList" class="admin-videos-list"></div>
+            </div>
+            <div id="adminReportsTab" class="admin-tab-content" style="display:none;">
+                <div class="reports-stats">
+                    <h4>System Reports</h4>
+                    <p>Total Users: <span id="reportTotalUsers">0</span></p>
+                    <p>Total Videos: <span id="reportTotalVideos">0</span></p>
+                    <p>Total Shorts: <span id="reportTotalShorts">0</span></p>
+                    <p>Verified Users: <span id="reportVerifiedUsers">0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
     <div id="studioWindow" class="modal studio-modal">
         <div class="studio-container">
             <div class="studio-sidebar">

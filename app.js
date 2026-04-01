@@ -27,6 +27,7 @@ import {
     getDownloadURL 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
+// Firebase конфигурация (ЗАМЕНИТЕ НА ВАШУ)
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyB0z2DJLqRjqxuSZktQ6SYSqj4L8OiK2Cc",
@@ -37,7 +38,7 @@ const firebaseConfig = {
   messagingSenderId: "310385177417",
   appId: "1:310385177417:web:034e8b9b6800333854a098",
   measurementId: "G-KKV77Y2CPC"
-};;
+};
 
 // Инициализация
 const app = initializeApp(firebaseConfig);

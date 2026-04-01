@@ -11,7 +11,7 @@ import {
     getStorage, ref, uploadBytes, getDownloadURL, deleteObject 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-// ========= FIREBASE CONFIG (ЗАМЕНИТЕ НА ВАШУ) =========
+// ========= FIREBASE CONFIG =========
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyB0z2DJLqRjqxuSZktQ6SYSqj4L8OiK2Cc",
@@ -34,7 +34,6 @@ let currentUser = null;
 let currentUserData = null;
 let currentCategory = "all";
 let allVideos = [];
-let allUsers = [];
 
 // ========= DOM ЭЛЕМЕНТЫ =========
 const videosContainer = document.getElementById("videosContainer");
@@ -95,7 +94,6 @@ function getCategoryName(cat) {
     return names[cat] || cat;
 }
 
-// ========= ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ =========
 async function getUserData(uid) {
     try {
         const userDoc = await getDoc(doc(db, "users", uid));
@@ -116,13 +114,6 @@ async function updateStats() {
         document.getElementById("statShorts").innerText = shortsSnap.size;
         document.getElementById("statUsers").innerText = usersSnap.size;
         document.getElementById("statVerified").innerText = verifiedSnap.size;
-        
-        if (document.getElementById("reportTotalUsers")) {
-            document.getElementById("reportTotalUsers").innerText = usersSnap.size;
-            document.getElementById("reportTotalVideos").innerText = videosSnap.size;
-            document.getElementById("reportTotalShorts").innerText = shortsSnap.size;
-            document.getElementById("reportVerifiedUsers").innerText = verifiedSnap.size;
-        }
     } catch (e) { console.error("Stats error:", e); }
 }
 
@@ -148,7 +139,6 @@ async function loadVideos() {
         allVideos = [];
         for (const docSnap of snap.docs) {
             const video = { id: docSnap.id, ...docSnap.data() };
-            // Получаем данные автора для проверки верификации
             const authorData = await getUserData(video.userId);
             video.authorVerified = authorData?.verified || false;
             allVideos.push(video);
@@ -158,12 +148,12 @@ async function loadVideos() {
         updateStats();
     } catch (e) {
         console.error("Load error:", e);
-        videosContainer.innerHTML = '<div class="loading-spinner">Error loading videos</div>';
+        if (videosContainer) videosContainer.innerHTML = '<div class="loading-spinner">Error loading videos</div>';
     }
 }
 
-// ========= ОТОБРАЖЕНИЕ ВИДЕО =========
 function displayVideos(videos) {
+    if (!videosContainer) return;
     if (videos.length === 0) {
         videosContainer.innerHTML = '<div class="loading-spinner">No videos found. Upload first!</div>';
         return;
@@ -174,10 +164,9 @@ function displayVideos(videos) {
     
     videosContainer.innerHTML = videos.map(v => {
         const vidId = v.isFile ? v.fileUrl : getYouTubeId(v.url);
-        const isShort = v.isShort;
         const verifiedMark = v.authorVerified ? '<span class="verified-badge-small">✓</span>' : '';
         
-        if (isShortsView || isShort) {
+        if (isShortsView || v.isShort) {
             return `
                 <div class="shorts-card">
                     <div class="shorts-thumb" onclick="window.playVideoById('${v.id}')">
@@ -205,7 +194,6 @@ function displayVideos(videos) {
                         `<iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0"></iframe>`
                     }
                     <div class="duration">${v.duration || "2:15"}</div>
-                    ${isShort ? '<div class="short-tag">#Shorts</div>' : ''}
                     ${v.authorVerified ? '<div class="verified-tag">✓ Verified</div>' : ''}
                 </div>
                 <div class="video-details">
@@ -239,10 +227,8 @@ window.playVideoById = async function(videoId) {
     document.getElementById("playerDescText").innerText = video.description || "";
     
     const verifiedBadgeSmall = document.getElementById("playerVerifiedBadge");
-    if (authorData?.verified) {
-        verifiedBadgeSmall.style.display = "inline";
-    } else {
-        verifiedBadgeSmall.style.display = "none";
+    if (verifiedBadgeSmall) {
+        verifiedBadgeSmall.style.display = authorData?.verified ? "inline" : "none";
     }
     
     const container = document.getElementById("playerContainer");
@@ -254,7 +240,7 @@ window.playVideoById = async function(videoId) {
         container.innerHTML = `<iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen style="width:100%; height:450px;"></iframe>`;
     }
     
-    playerModal.style.display = "block";
+    if (playerModal) playerModal.style.display = "block";
 };
 
 // ========= ЗАГРУЗКА ФАЙЛА =========
@@ -295,16 +281,244 @@ async function deleteVideo(videoId, fileUrl) {
     if (!confirm("Delete this video?")) return;
     try {
         if (fileUrl) {
-            const fileRef = ref(storage, fileUrl);
-            await deleteObject(fileRef).catch(() => {});
+            try {
+                const fileRef = ref(storage, fileUrl);
+                await deleteObject(fileRef);
+            } catch(e) {}
         }
         await deleteDoc(doc(db, "videos", videoId));
         alert("Video deleted");
         await loadVideos();
-        if (studioModal.style.display === "block") loadStudioVideos();
-        if (adminModal.style.display === "block") loadAdminVideos();
+        if (studioModal && studioModal.style.display === "block") loadStudioData();
+        if (adminModal && adminModal.style.display === "block") loadAdminData();
     } catch (e) { alert("Error: " + e.message); }
 }
+
+window.deleteVideo = deleteVideo;
+
+// ========= YOUTUBE STUDIO - ПОЛНОСТЬЮ РАБОТАЕТ =========
+async function loadStudioData() {
+    if (!currentUser) return;
+    
+    try {
+        const videosQuery = query(collection(db, "videos"), where("userId", "==", currentUser.uid), orderBy("timestamp", "desc"));
+        const videosSnap = await getDocs(videosQuery);
+        const userVideos = [];
+        let totalViews = 0;
+        let totalLikes = 0;
+        
+        videosSnap.forEach(doc => {
+            const video = { id: doc.id, ...doc.data() };
+            userVideos.push(video);
+            totalViews += video.views || 0;
+            totalLikes += video.likes || 0;
+        });
+        
+        const shorts = userVideos.filter(v => v.isShort);
+        
+        // Обновляем статистику
+        document.getElementById("studioTotalViews").innerText = totalViews;
+        document.getElementById("studioTotalVideos").innerText = userVideos.length;
+        document.getElementById("studioTotalShorts").innerText = shorts.length;
+        document.getElementById("studioTotalLikes").innerText = totalLikes;
+        
+        // Обновляем список видео
+        const filterType = document.getElementById("studioFilterType")?.value || "all";
+        let filteredVideos = userVideos;
+        if (filterType === "videos") filteredVideos = userVideos.filter(v => !v.isShort);
+        if (filterType === "shorts") filteredVideos = userVideos.filter(v => v.isShort);
+        
+        const videosListHtml = filteredVideos.map(v => `
+            <div class="studio-video-item">
+                <div class="studio-video-info">
+                    <div class="studio-video-title">${escapeHtml(v.title)}</div>
+                    <div class="studio-video-stats">
+                        <span>👁️ ${v.views || 0} views</span>
+                        <span>👍 ${v.likes || 0} likes</span>
+                        <span>📅 ${v.timestamp?.toDate?.().toLocaleDateString() || "Recent"}</span>
+                    </div>
+                </div>
+                <div class="studio-video-actions">
+                    <button class="studio-btn-icon edit" onclick="window.editVideo('${v.id}')">✏️ Edit</button>
+                    <button class="studio-btn-icon delete" onclick="window.deleteVideo('${v.id}', '${v.fileUrl || ""}')">🗑️ Delete</button>
+                </div>
+            </div>
+        `).join("");
+        
+        document.getElementById("studioVideosList").innerHTML = videosListHtml || "<p style='color:#aaa; text-align:center;'>No videos yet. Upload your first video!</p>";
+        
+        // Recent Activity
+        const recentHtml = userVideos.slice(0, 5).map(v => `
+            <div class="activity-item">
+                <div class="activity-text">📹 "${escapeHtml(v.title)}" - ${v.views || 0} views</div>
+                <div class="activity-time">${v.timestamp?.toDate?.()?.toLocaleDateString() || "Just now"}</div>
+            </div>
+        `).join("");
+        document.getElementById("studioRecentActivity").innerHTML = recentHtml || "<p>No recent activity</p>";
+        
+        // Channel info
+        document.getElementById("studioUserName").innerText = currentUserData?.username || currentUser.displayName || "User";
+        document.getElementById("studioUserSubs").innerText = "0 subscribers";
+        document.getElementById("studioChannelName").value = currentUserData?.username || "";
+        document.getElementById("studioChannelDesc").value = currentUserData?.channelDescription || "";
+        document.getElementById("studioChannelUrl").value = `youtube.com/@${currentUserData?.username || "user"}`;
+        
+        // Chart
+        drawStudioChart(userVideos);
+        
+    } catch (e) {
+        console.error("Studio error:", e);
+    }
+}
+
+function drawStudioChart(videos) {
+    const ctx = document.getElementById("studioViewsChart")?.getContext("2d");
+    if (!ctx) return;
+    
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        last7Days.push(d.toLocaleDateString());
+    }
+    
+    ctx.clearRect(0, 0, 600, 300);
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fillRect(0, 0, 600, 300);
+    ctx.fillStyle = "#cc181e";
+    
+    const barWidth = 50;
+    const maxViews = Math.max(...videos.map(v => v.views || 0), 100);
+    
+    videos.slice(0, 7).forEach((v, i) => {
+        const height = ((v.views || 0) / maxViews) * 200;
+        ctx.fillRect(i * barWidth + 50, 280 - height, barWidth - 5, height);
+        ctx.fillStyle = "#fff";
+        ctx.font = "10px Arial";
+        ctx.fillText(v.views || 0, i * barWidth + 65, 275 - height);
+        ctx.fillStyle = "#cc181e";
+    });
+}
+
+window.editVideo = async function(videoId) {
+    const video = allVideos.find(v => v.id === videoId);
+    if (!video) return;
+    const newTitle = prompt("Edit title:", video.title);
+    if (newTitle && newTitle !== video.title) {
+        await updateDoc(doc(db, "videos", videoId), { title: newTitle });
+        alert("Updated!");
+        await loadVideos();
+        await loadStudioData();
+    }
+};
+
+// ========= АДМИН ПАНЕЛЬ =========
+async function loadAdminData() {
+    try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        const videosSnap = await getDocs(collection(db, "videos"));
+        const verifiedSnap = await getDocs(query(collection(db, "users"), where("verified", "==", true)));
+        const shortsSnap = await getDocs(query(collection(db, "videos"), where("isShort", "==", true)));
+        
+        document.getElementById("adminTotalUsers").innerText = usersSnap.size;
+        document.getElementById("adminTotalVideos").innerText = videosSnap.size;
+        document.getElementById("adminTotalShorts").innerText = shortsSnap.size;
+        document.getElementById("adminVerifiedUsers").innerText = verifiedSnap.size;
+        
+        await loadAdminUsers();
+        await loadAdminVideos();
+        
+    } catch (e) { console.error("Admin error:", e); }
+}
+
+async function loadAdminUsers() {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const users = [];
+    usersSnap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+    
+    const searchTerm = document.getElementById("adminUserSearch")?.value.toLowerCase() || "";
+    const filtered = users.filter(u => u.username?.toLowerCase().includes(searchTerm) || u.email?.toLowerCase().includes(searchTerm));
+    
+    const listHtml = filtered.map(u => `
+        <div class="admin-user-item">
+            <div class="admin-user-info">
+                <div class="admin-user-name">
+                    ${escapeHtml(u.username)}
+                    ${u.verified ? '<span class="admin-user-verified">✓ Verified</span>' : ''}
+                </div>
+                <div class="admin-user-email">${escapeHtml(u.email)}</div>
+                <div>Joined: ${u.createdAt?.toDate?.()?.toLocaleDateString() || "Unknown"}</div>
+            </div>
+            <div class="admin-actions">
+                ${!u.verified ? `<button class="admin-btn verify" onclick="window.verifyUser('${u.uid}')">✓ Verify</button>` : ""}
+                <button class="admin-btn delete" onclick="window.deleteUser('${u.uid}')">🗑️ Delete</button>
+            </div>
+        </div>
+    `).join("");
+    
+    document.getElementById("adminUsersList").innerHTML = listHtml || "<p>No users found</p>";
+}
+
+async function loadAdminVideos() {
+    const videosSnap = await getDocs(query(collection(db, "videos"), orderBy("timestamp", "desc")));
+    const videos = [];
+    videosSnap.forEach(doc => videos.push({ id: doc.id, ...doc.data() }));
+    
+    const searchTerm = document.getElementById("adminVideoSearch")?.value.toLowerCase() || "";
+    const filterType = document.getElementById("adminVideoFilter")?.value || "all";
+    
+    let filtered = videos;
+    if (searchTerm) {
+        filtered = filtered.filter(v => v.title?.toLowerCase().includes(searchTerm) || v.author?.toLowerCase().includes(searchTerm));
+    }
+    if (filterType === "videos") filtered = filtered.filter(v => !v.isShort);
+    if (filterType === "shorts") filtered = filtered.filter(v => v.isShort);
+    
+    const listHtml = filtered.map(v => `
+        <div class="admin-video-item">
+            <div class="admin-video-info">
+                <div class="admin-user-name">${escapeHtml(v.title)}</div>
+                <div>Author: ${escapeHtml(v.author)} | Views: ${v.views || 0} | ${v.isShort ? "📱 Short" : "📹 Video"}</div>
+                <div>Category: ${getCategoryName(v.category)}</div>
+            </div>
+            <div class="admin-actions">
+                <button class="admin-btn delete" onclick="window.deleteVideo('${v.id}', '${v.fileUrl || ""}')">🗑️ Delete</button>
+            </div>
+        </div>
+    `).join("");
+    
+    document.getElementById("adminVideosList").innerHTML = listHtml || "<p>No videos found</p>";
+}
+
+window.verifyUser = async function(uid) {
+    try {
+        await updateDoc(doc(db, "users", uid), { verified: true });
+        alert("User verified!");
+        await loadAdminUsers();
+        await updateStats();
+    } catch (e) { alert("Error: " + e.message); }
+};
+
+window.deleteUser = async function(uid) {
+    if (!confirm("Delete user? This will also delete their videos!")) return;
+    try {
+        const videosSnap = await getDocs(query(collection(db, "videos"), where("userId", "==", uid)));
+        for (const videoDoc of videosSnap.docs) {
+            const video = videoDoc.data();
+            if (video.fileUrl) {
+                try {
+                    const fileRef = ref(storage, video.fileUrl);
+                    await deleteObject(fileRef);
+                } catch(e) {}
+            }
+            await deleteDoc(doc(db, "videos", videoDoc.id));
+        }
+        await deleteDoc(doc(db, "users", uid));
+        alert("User deleted");
+        await loadAdminData();
+        await updateStats();
+    } catch (e) { alert("Error: " + e.message); }
+};
 
 // ========= ПОИСК =========
 function searchVideos() {
@@ -317,129 +531,6 @@ function searchVideos() {
     displayVideos(filtered);
 }
 
-// ========= YOUTUBE STUDIO =========
-async function loadStudioVideos() {
-    if (!currentUser) return;
-    const q = query(collection(db, "videos"), where("userId", "==", currentUser.uid), orderBy("timestamp", "desc"));
-    const snap = await getDocs(q);
-    const myVideos = [];
-    let totalViews = 0;
-    let totalShorts = 0;
-    
-    snap.forEach(doc => {
-        const video = { id: doc.id, ...doc.data() };
-        myVideos.push(video);
-        totalViews += video.views || 0;
-        if (video.isShort) totalShorts++;
-    });
-    
-    document.getElementById("studioTotalVideos").innerText = myVideos.length;
-    document.getElementById("studioTotalShorts").innerText = totalShorts;
-    document.getElementById("studioTotalViews").innerText = totalViews;
-    
-    const listHtml = myVideos.map(v => `
-        <div class="studio-video-item">
-            <div class="studio-video-info">
-                <div class="studio-video-title">${escapeHtml(v.title)}</div>
-                <div class="studio-video-stats">Views: ${v.views || 0} | ${v.isShort ? "Short" : "Video"} | ${getCategoryName(v.category)}</div>
-            </div>
-            <div>
-                <button class="studio-btn-small edit" onclick="window.editVideo('${v.id}')">Edit</button>
-                <button class="studio-btn-small delete" onclick="window.deleteVideoById('${v.id}', '${v.fileUrl || ""}')">Delete</button>
-            </div>
-        </div>
-    `).join("");
-    
-    document.getElementById("myVideosList").innerHTML = listHtml || "<p>No videos yet</p>";
-}
-
-window.deleteVideoById = deleteVideo;
-
-window.editVideo = function(videoId) {
-    const video = allVideos.find(v => v.id === videoId);
-    if (!video) return;
-    const newTitle = prompt("Edit title:", video.title);
-    if (newTitle && newTitle !== video.title) {
-        updateDoc(doc(db, "videos", videoId), { title: newTitle }).then(() => {
-            alert("Updated!");
-            loadVideos();
-            loadStudioVideos();
-        });
-    }
-};
-
-// ========= АДМИН ПАНЕЛЬ =========
-async function loadAdminUsers() {
-    const usersSnap = await getDocs(collection(db, "users"));
-    const users = [];
-    usersSnap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
-    
-    const listHtml = users.map(u => `
-        <div class="admin-user-item">
-            <div class="admin-user-info">
-                <strong>${escapeHtml(u.username)}</strong><br>
-                Email: ${escapeHtml(u.email)}<br>
-                Verified: ${u.verified ? "✓ Yes" : "✗ No"}
-            </div>
-            <div>
-                ${!u.verified ? `<button class="admin-btn-small verify" onclick="window.verifyUser('${u.uid}')">Verify</button>` : ""}
-                <button class="admin-btn-small delete" onclick="window.deleteUser('${u.uid}')">Delete</button>
-            </div>
-        </div>
-    `).join("");
-    
-    document.getElementById("usersList").innerHTML = listHtml || "<p>No users</p>";
-}
-
-async function loadAdminVideos() {
-    const videosSnap = await getDocs(query(collection(db, "videos"), orderBy("timestamp", "desc")));
-    const videos = [];
-    videosSnap.forEach(doc => videos.push({ id: doc.id, ...doc.data() }));
-    
-    const listHtml = videos.map(v => `
-        <div class="admin-video-item">
-            <div class="admin-video-info">
-                <strong>${escapeHtml(v.title)}</strong><br>
-                Author: ${escapeHtml(v.author)} | Views: ${v.views || 0} | ${v.isShort ? "Short" : "Video"}
-            </div>
-            <div>
-                <button class="admin-btn-small delete" onclick="window.deleteVideoById('${v.id}', '${v.fileUrl || ""}')">Delete</button>
-            </div>
-        </div>
-    `).join("");
-    
-    document.getElementById("adminVideosList").innerHTML = listHtml || "<p>No videos</p>";
-}
-
-window.verifyUser = async function(uid) {
-    try {
-        await updateDoc(doc(db, "users", uid), { verified: true });
-        alert("User verified!");
-        loadAdminUsers();
-        updateStats();
-    } catch (e) { alert("Error: " + e.message); }
-};
-
-window.deleteUser = async function(uid) {
-    if (!confirm("Delete user? This will also delete their videos!")) return;
-    try {
-        const videosSnap = await getDocs(query(collection(db, "videos"), where("userId", "==", uid)));
-        for (const videoDoc of videosSnap.docs) {
-            const video = videoDoc.data();
-            if (video.fileUrl) {
-                const fileRef = ref(storage, video.fileUrl);
-                await deleteObject(fileRef).catch(() => {});
-            }
-            await deleteDoc(doc(db, "videos", videoDoc.id));
-        }
-        await deleteDoc(doc(db, "users", uid));
-        alert("User deleted");
-        loadAdminUsers();
-        loadAdminVideos();
-        updateStats();
-    } catch (e) { alert("Error: " + e.message); }
-};
-
 // ========= СОБЫТИЯ =========
 function initEvents() {
     // Навигация по категориям
@@ -450,180 +541,253 @@ function initEvents() {
             loadVideos();
             document.querySelectorAll(".nav-item, .cat-list a").forEach(a => a.classList.remove("active"));
             link.classList.add("active");
-            if (currentCategory === "my") document.querySelector(".nav-item[data-category='my']")?.classList.add("active");
         });
     });
     
     // Поиск
-    searchBtn.onclick = searchVideos;
-    searchInput.onkeypress = (e) => { if (e.key === "Enter") searchVideos(); };
+    if (searchBtn) searchBtn.onclick = searchVideos;
+    if (searchInput) searchInput.onkeypress = (e) => { if (e.key === "Enter") searchVideos(); };
     
     // Тип источника
-    sourceType.onchange = () => {
-        if (sourceType.value === "youtube") {
-            youtubeRow.style.display = "block";
-            fileRow.style.display = "none";
-        } else {
-            youtubeRow.style.display = "none";
-            fileRow.style.display = "block";
-        }
-    };
+    if (sourceType) {
+        sourceType.onchange = () => {
+            if (sourceType.value === "youtube") {
+                if (youtubeRow) youtubeRow.style.display = "block";
+                if (fileRow) fileRow.style.display = "none";
+            } else {
+                if (youtubeRow) youtubeRow.style.display = "none";
+                if (fileRow) fileRow.style.display = "block";
+            }
+        };
+    }
     
     // Кнопки загрузки
     const showUpload = () => {
-        if (currentUser) uploadModal.style.display = "block";
-        else { alert("Sign in first"); loginModal.style.display = "block"; }
-    };
-    uploadTopBtn.onclick = showUpload;
-    uploadSideBtn.onclick = showUpload;
-    uploadShortSideBtn.onclick = () => {
-        if (currentUser) { uploadModal.style.display = "block"; isShortCheck.checked = true; }
-        else { alert("Sign in first"); loginModal.style.display = "block"; }
+        if (currentUser) {
+            if (uploadModal) uploadModal.style.display = "block";
+        } else {
+            alert("Sign in first");
+            if (loginModal) loginModal.style.display = "block";
+        }
     };
     
-    loginBtn.onclick = () => loginModal.style.display = "block";
-    registerBtn.onclick = () => registerModal.style.display = "block";
+    if (uploadTopBtn) uploadTopBtn.onclick = showUpload;
+    if (uploadSideBtn) uploadSideBtn.onclick = showUpload;
+    if (uploadShortSideBtn) {
+        uploadShortSideBtn.onclick = () => {
+            if (currentUser) {
+                if (uploadModal) uploadModal.style.display = "block";
+                if (isShortCheck) isShortCheck.checked = true;
+            } else {
+                alert("Sign in first");
+                if (loginModal) loginModal.style.display = "block";
+            }
+        };
+    }
     
-    studioBtn.onclick = async () => {
-        await loadStudioVideos();
-        studioModal.style.display = "block";
-    };
+    if (loginBtn) loginBtn.onclick = () => { if (loginModal) loginModal.style.display = "block"; };
+    if (registerBtn) registerBtn.onclick = () => { if (registerModal) registerModal.style.display = "block"; };
+    
+    if (studioBtn) {
+        studioBtn.onclick = async () => {
+            await loadStudioData();
+            if (studioModal) studioModal.style.display = "block";
+        };
+    }
     
     // Закрытие модалок
-    document.querySelectorAll(".close-modal").forEach(close => {
+    document.querySelectorAll(".close-modal, .studio-close, .admin-close").forEach(close => {
         close.onclick = () => {
-            uploadModal.style.display = "none";
-            loginModal.style.display = "none";
-            registerModal.style.display = "none";
-            playerModal.style.display = "none";
-            studioModal.style.display = "none";
-            adminModal.style.display = "none";
+            if (uploadModal) uploadModal.style.display = "none";
+            if (loginModal) loginModal.style.display = "none";
+            if (registerModal) registerModal.style.display = "none";
+            if (playerModal) playerModal.style.display = "none";
+            if (studioModal) studioModal.style.display = "none";
+            if (adminModal) adminModal.style.display = "none";
         };
     });
     
-    // Переключение форм
-    document.getElementById("showRegLink")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        loginModal.style.display = "none";
-        registerModal.style.display = "block";
-    });
-    document.getElementById("showLoginLink")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        registerModal.style.display = "none";
-        loginModal.style.display = "block";
-    });
-    
-    // Studio tabs
-    document.querySelectorAll(".studio-tab").forEach(tab => {
-        tab.onclick = () => {
-            document.querySelectorAll(".studio-tab").forEach(t => t.classList.remove("active"));
-            document.querySelectorAll(".studio-tab-content").forEach(c => c.style.display = "none");
+    // Studio Tabs
+    document.querySelectorAll(".studio-nav-item").forEach(tab => {
+        tab.onclick = (e) => {
+            e.preventDefault();
+            const tabName = tab.dataset.studioTab;
+            document.querySelectorAll(".studio-nav-item").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".studio-tab-pane").forEach(p => p.style.display = "none");
             tab.classList.add("active");
-            document.getElementById(`studio${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}Tab`).style.display = "block";
+            const pane = document.getElementById(`studio${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`);
+            if (pane) pane.style.display = "block";
+            document.getElementById("studioPageTitle").innerText = tabName.charAt(0).toUpperCase() + tabName.slice(1);
         };
     });
     
-    // Admin tabs
-    document.querySelectorAll(".admin-tab").forEach(tab => {
-        tab.onclick = () => {
-            document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
-            document.querySelectorAll(".admin-tab-content").forEach(c => c.style.display = "none");
+    // Admin Tabs
+    document.querySelectorAll(".admin-nav-item").forEach(tab => {
+        tab.onclick = (e) => {
+            e.preventDefault();
+            const tabName = tab.dataset.adminTab;
+            document.querySelectorAll(".admin-nav-item").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".admin-tab-pane").forEach(p => p.style.display = "none");
             tab.classList.add("active");
-            document.getElementById(`admin${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}Tab`).style.display = "block";
+            const pane = document.getElementById(`admin${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`);
+            if (pane) pane.style.display = "block";
+            document.getElementById("adminPageTitle").innerText = tabName.charAt(0).toUpperCase() + tabName.slice(1);
         };
     });
+    
+    // Фильтры в студии
+    const filterSelect = document.getElementById("studioFilterType");
+    if (filterSelect) filterSelect.onchange = () => loadStudioData();
+    
+    const adminSearch = document.getElementById("adminUserSearch");
+    if (adminSearch) adminSearch.oninput = () => loadAdminUsers();
+    
+    const adminVideoSearch = document.getElementById("adminVideoSearch");
+    if (adminVideoSearch) adminVideoSearch.oninput = () => loadAdminVideos();
+    
+    const adminVideoFilter = document.getElementById("adminVideoFilter");
+    if (adminVideoFilter) adminVideoFilter.onchange = () => loadAdminVideos();
+    
+    // Studio upload
+    const studioUploadBtn = document.getElementById("studioUploadBtn");
+    if (studioUploadBtn) {
+        studioUploadBtn.onclick = () => {
+            if (studioModal) studioModal.style.display = "none";
+            if (uploadModal) uploadModal.style.display = "block";
+        };
+    }
+    
+    // Save settings
+    const saveSettings = document.getElementById("saveStudioSettings");
+    if (saveSettings) {
+        saveSettings.onclick = async () => {
+            if (!currentUser) return;
+            const channelName = document.getElementById("studioChannelName").value;
+            const channelDesc = document.getElementById("studioChannelDesc").value;
+            await updateDoc(doc(db, "users", currentUser.uid), {
+                username: channelName, channelDescription: channelDesc
+            });
+            if (channelName) await updateProfile(auth.currentUser, { displayName: channelName });
+            alert("Settings saved!");
+            await loadStudioData();
+        };
+    }
+    
+    // Export data
+    const exportBtn = document.getElementById("exportDataBtn");
+    if (exportBtn) {
+        exportBtn.onclick = async () => {
+            const usersSnap = await getDocs(collection(db, "users"));
+            const videosSnap = await getDocs(collection(db, "videos"));
+            const data = {
+                users: usersSnap.docs.map(d => d.data()),
+                videos: videosSnap.docs.map(d => d.data()),
+                exportDate: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `youtube_export_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+    }
     
     // Регистрация
-    registerForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const username = document.getElementById("regUsernameField").value;
-        const email = document.getElementById("regEmailField").value;
-        const password = document.getElementById("regPasswordField").value;
-        
-        if (password.length < 6) {
-            alert("Password must be at least 6 chars");
-            return;
-        }
-        
-        try {
-            const cred = await createUserWithEmailAndPassword(auth, email, password);
-            await updateProfile(cred.user, { displayName: username });
-            await setDoc(doc(db, "users", cred.user.uid), {
-                uid: cred.user.uid, username, email, createdAt: Timestamp.now(),
-                verified: false, channelDescription: ""
-            });
-            registerModal.style.display = "none";
-            alert("✅ Registered!");
-        } catch (err) {
-            alert("Error: " + err.message);
-        }
-    };
+    if (registerForm) {
+        registerForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const username = document.getElementById("regUsernameField").value;
+            const email = document.getElementById("regEmailField").value;
+            const password = document.getElementById("regPasswordField").value;
+            
+            if (password.length < 6) {
+                alert("Password must be at least 6 chars");
+                return;
+            }
+            
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(cred.user, { displayName: username });
+                await setDoc(doc(db, "users", cred.user.uid), {
+                    uid: cred.user.uid, username, email, createdAt: Timestamp.now(),
+                    verified: false, channelDescription: ""
+                });
+                if (registerModal) registerModal.style.display = "none";
+                alert("✅ Registered!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        };
+    }
     
     // Вход
-    loginForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const email = document.getElementById("loginEmailField").value;
-        const password = document.getElementById("loginPasswordField").value;
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            loginModal.style.display = "none";
-        } catch (err) {
-            alert("Invalid email or password");
-        }
-    };
+    if (loginForm) {
+        loginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("loginEmailField").value;
+            const password = document.getElementById("loginPasswordField").value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                if (loginModal) loginModal.style.display = "none";
+            } catch (err) {
+                alert("Invalid email or password");
+            }
+        };
+    }
     
     // Загрузка видео
-    uploadForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const title = videoTitle.value;
-        const category = videoCategory.value;
-        const desc = videoDesc.value;
-        const isShort = isShortCheck.checked;
-        const type = sourceType.value;
-        
-        if (!title) { alert("Enter title"); return; }
-        
-        let url = "", fileUrl = null, isFile = false;
-        
-        if (type === "youtube") {
-            url = youtubeLink.value;
-            if (!url) { alert("Enter YouTube URL"); return; }
-        } else {
-            const file = videoFile.files[0];
-            if (!file) { alert("Select file"); return; }
-            if (file.size > 100 * 1024 * 1024) { alert("Max 100MB"); return; }
-            isFile = true;
-            try {
-                fileUrl = await uploadFileToStorage(file);
-            } catch (err) { alert("Upload failed: " + err.message); return; }
-        }
-        
-        await publishVideo(title, url, category, desc, isShort, isFile, fileUrl);
-        uploadModal.style.display = "none";
-        uploadForm.reset();
-        isShortCheck.checked = false;
-        sourceType.value = "youtube";
-        youtubeRow.style.display = "block";
-        fileRow.style.display = "none";
-    };
+    if (uploadForm) {
+        uploadForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const title = videoTitle.value;
+            const category = videoCategory.value;
+            const desc = videoDesc.value;
+            const isShort = isShortCheck.checked;
+            const type = sourceType.value;
+            
+            if (!title) { alert("Enter title"); return; }
+            
+            let url = "", fileUrl = null, isFile = false;
+            
+            if (type === "youtube") {
+                url = youtubeLink.value;
+                if (!url) { alert("Enter YouTube URL"); return; }
+            } else {
+                const file = videoFile.files[0];
+                if (!file) { alert("Select file"); return; }
+                if (file.size > 100 * 1024 * 1024) { alert("Max 100MB"); return; }
+                isFile = true;
+                try {
+                    fileUrl = await uploadFileToStorage(file);
+                } catch (err) { alert("Upload failed: " + err.message); return; }
+            }
+            
+            await publishVideo(title, url, category, desc, isShort, isFile, fileUrl);
+            if (uploadModal) uploadModal.style.display = "none";
+            uploadForm.reset();
+            if (isShortCheck) isShortCheck.checked = false;
+            if (sourceType) sourceType.value = "youtube";
+            if (youtubeRow) youtubeRow.style.display = "block";
+            if (fileRow) fileRow.style.display = "none";
+        };
+    }
     
-    logoutBtn.onclick = async () => { await signOut(auth); };
+    if (logoutBtn) {
+        logoutBtn.onclick = async () => { await signOut(auth); };
+    }
     
     window.onclick = (e) => {
-        if (e.target.classList.contains("modal")) e.target.style.display = "none";
+        if (e.target.classList.contains("modal")) {
+            if (uploadModal) uploadModal.style.display = "none";
+            if (loginModal) loginModal.style.display = "none";
+            if (registerModal) registerModal.style.display = "none";
+            if (playerModal) playerModal.style.display = "none";
+            if (studioModal) studioModal.style.display = "none";
+            if (adminModal) adminModal.style.display = "none";
+        }
     };
-    
-    // Сохранение настроек канала
-    document.getElementById("saveChannelSettings")?.addEventListener("click", async () => {
-        if (!currentUser) return;
-        const channelName = document.getElementById("channelName").value;
-        const channelDesc = document.getElementById("channelDesc").value;
-        await updateDoc(doc(db, "users", currentUser.uid), {
-            username: channelName, channelDescription: channelDesc
-        });
-        if (channelName) await updateProfile(auth.currentUser, { displayName: channelName });
-        alert("Settings saved!");
-    });
 }
 
 // ========= АУТЕНТИФИКАЦИЯ =========
@@ -631,37 +795,30 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (user) {
         currentUserData = await getUserData(user.uid);
-        unauthDiv.style.display = "none";
-        authDiv.style.display = "flex";
-        usernameSpan.innerText = currentUserData?.username || user.displayName || user.email.split("@")[0];
+        if (unauthDiv) unauthDiv.style.display = "none";
+        if (authDiv) authDiv.style.display = "flex";
+        if (usernameSpan) usernameSpan.innerText = currentUserData?.username || user.displayName || user.email.split("@")[0];
         
-        if (currentUserData?.verified) {
-            verifiedBadge.style.display = "inline";
-        } else {
-            verifiedBadge.style.display = "none";
+        if (verifiedBadge) {
+            verifiedBadge.style.display = currentUserData?.verified ? "inline" : "none";
         }
         
-        // Показываем админ панель для админа (по email)
-        if (user.email === "admin@youtube.com") {
-            adminPanelBtn.style.display = "inline-block";
-            adminPanelBtn.onclick = async () => {
-                await loadAdminUsers();
-                await loadAdminVideos();
-                adminModal.style.display = "block";
-            };
-        } else {
-            adminPanelBtn.style.display = "none";
-        }
-        
-        // Загружаем данные для студии
-        if (document.getElementById("channelName")) {
-            document.getElementById("channelName").value = currentUserData?.username || "";
-            document.getElementById("channelDesc").value = currentUserData?.channelDescription || "";
+        // Показываем админ панель для админа
+        if (adminPanelBtn) {
+            if (user.email === "admin@youtube.com" || currentUserData?.isAdmin) {
+                adminPanelBtn.style.display = "inline-block";
+                adminPanelBtn.onclick = async () => {
+                    await loadAdminData();
+                    if (adminModal) adminModal.style.display = "block";
+                };
+            } else {
+                adminPanelBtn.style.display = "none";
+            }
         }
     } else {
-        unauthDiv.style.display = "flex";
-        authDiv.style.display = "none";
-        adminPanelBtn.style.display = "none";
+        if (unauthDiv) unauthDiv.style.display = "flex";
+        if (authDiv) authDiv.style.display = "none";
+        if (adminPanelBtn) adminPanelBtn.style.display = "none";
         currentUserData = null;
     }
     loadVideos();
@@ -669,4 +826,4 @@ onAuthStateChanged(auth, async (user) => {
 
 // ========= ЗАПУСК =========
 initEvents();
-console.log("🚀 YouTube 2008 Running with Admin Panel & Studio!");
+console.log("🚀 YouTube 2008 Running with Studio & Admin Panel!");

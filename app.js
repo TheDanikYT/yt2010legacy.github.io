@@ -11,7 +11,7 @@ import {
     getStorage, ref, uploadBytes, getDownloadURL, deleteObject 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-// ========= FIREBASE CONFIG =========
+// ========= FIREBASE CONFIG (ЗАМЕНИТЕ НА ВАШУ) =========
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyB0z2DJLqRjqxuSZktQ6SYSqj4L8OiK2Cc",
@@ -53,26 +53,26 @@ const usernameSpan = document.getElementById("usernameSpan");
 const verifiedBadge = document.getElementById("verifiedBadge");
 
 // Модалки
-const uploadModal = document.getElementById("uploadWindow");
-const loginModal = document.getElementById("loginWindow");
-const registerModal = document.getElementById("registerWindow");
-const playerModal = document.getElementById("playerWindow");
-const studioModal = document.getElementById("studioWindow");
-const adminModal = document.getElementById("adminWindow");
+const uploadModal = document.getElementById("uploadModal");
+const loginModal = document.getElementById("loginModal");
+const registerModal = document.getElementById("registerModal");
+const playerModal = document.getElementById("playerModal");
+const studioModal = document.getElementById("studioModal");
+const adminModal = document.getElementById("adminModal");
 
 // Формы
-const uploadForm = document.getElementById("uploadVideoForm");
-const loginForm = document.getElementById("loginFormData");
-const registerForm = document.getElementById("registerFormData");
+const uploadForm = document.getElementById("uploadForm");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
 const sourceType = document.getElementById("sourceType");
-const youtubeRow = document.getElementById("youtubeRow");
-const fileRow = document.getElementById("fileRow");
-const youtubeLink = document.getElementById("youtubeLink");
-const videoFile = document.getElementById("videoFileUpload");
-const videoTitle = document.getElementById("videoTitleInput");
-const videoCategory = document.getElementById("videoCategorySelect");
-const videoDesc = document.getElementById("videoDescInput");
-const isShortCheck = document.getElementById("shortCheckbox");
+const youtubeGroup = document.getElementById("youtubeGroup");
+const fileGroup = document.getElementById("fileGroup");
+const youtubeUrl = document.getElementById("youtubeUrl");
+const videoFile = document.getElementById("videoFile");
+const videoTitle = document.getElementById("videoTitle");
+const videoCategory = document.getElementById("videoCategory");
+const videoDescription = document.getElementById("videoDescription");
+const isShortCheck = document.getElementById("isShort");
 
 // ========= ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =========
 function getYouTubeId(url) {
@@ -97,9 +97,8 @@ function getCategoryName(cat) {
 async function getUserData(uid) {
     try {
         const userDoc = await getDoc(doc(db, "users", uid));
-        if (userDoc.exists()) return userDoc.data();
-    } catch (e) { console.error(e); }
-    return null;
+        return userDoc.exists() ? userDoc.data() : null;
+    } catch (e) { return null; }
 }
 
 // ========= СТАТИСТИКА =========
@@ -114,7 +113,7 @@ async function updateStats() {
         document.getElementById("statShorts").innerText = shortsSnap.size;
         document.getElementById("statUsers").innerText = usersSnap.size;
         document.getElementById("statVerified").innerText = verifiedSnap.size;
-    } catch (e) { console.error("Stats error:", e); }
+    } catch (e) { console.error(e); }
 }
 
 // ========= ЗАГРУЗКА ВИДЕО =========
@@ -143,19 +142,18 @@ async function loadVideos() {
             video.authorVerified = authorData?.verified || false;
             allVideos.push(video);
         }
-        
         displayVideos(allVideos);
         updateStats();
     } catch (e) {
-        console.error("Load error:", e);
-        if (videosContainer) videosContainer.innerHTML = '<div class="loading-spinner">Error loading videos</div>';
+        console.error(e);
+        if (videosContainer) videosContainer.innerHTML = '<div class="loading">Error loading videos</div>';
     }
 }
 
 function displayVideos(videos) {
     if (!videosContainer) return;
     if (videos.length === 0) {
-        videosContainer.innerHTML = '<div class="loading-spinner">No videos found. Upload first!</div>';
+        videosContainer.innerHTML = '<div class="loading">No videos found. Upload first!</div>';
         return;
     }
     
@@ -164,12 +162,12 @@ function displayVideos(videos) {
     
     videosContainer.innerHTML = videos.map(v => {
         const vidId = v.isFile ? v.fileUrl : getYouTubeId(v.url);
-        const verifiedMark = v.authorVerified ? '<span class="verified-badge-small">✓</span>' : '';
+        const verifiedMark = v.authorVerified ? '<span class="verified-badge-small" style="color:#3b88f5;">✓</span>' : '';
         
         if (isShortsView || v.isShort) {
             return `
                 <div class="shorts-card">
-                    <div class="shorts-thumb" onclick="window.playVideoById('${v.id}')">
+                    <div class="shorts-thumb" onclick="window.playVideo('${v.id}')">
                         ${v.isFile ? 
                             `<video src="${v.fileUrl}"></video>` : 
                             `<iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0"></iframe>`
@@ -178,7 +176,7 @@ function displayVideos(videos) {
                         ${v.authorVerified ? '<div class="verified-tag">✓ Verified</div>' : ''}
                     </div>
                     <div class="video-details">
-                        <a href="#" class="video-title" onclick="window.playVideoById('${v.id}'); return false;">${escapeHtml(v.title)}</a>
+                        <a href="#" class="video-title" onclick="window.playVideo('${v.id}'); return false;">${escapeHtml(v.title)}</a>
                         <div class="video-author">${escapeHtml(v.author)} ${verifiedMark}</div>
                         <div class="video-stats">👁️ ${v.views || 0} views</div>
                     </div>
@@ -188,7 +186,7 @@ function displayVideos(videos) {
         
         return `
             <div class="video-card">
-                <div class="thumbnail" onclick="window.playVideoById('${v.id}')">
+                <div class="thumbnail" onclick="window.playVideo('${v.id}')">
                     ${v.isFile ? 
                         `<video src="${v.fileUrl}"></video>` : 
                         `<iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0"></iframe>`
@@ -197,7 +195,7 @@ function displayVideos(videos) {
                     ${v.authorVerified ? '<div class="verified-tag">✓ Verified</div>' : ''}
                 </div>
                 <div class="video-details">
-                    <a href="#" class="video-title" onclick="window.playVideoById('${v.id}'); return false;">${escapeHtml(v.title)}</a>
+                    <a href="#" class="video-title" onclick="window.playVideo('${v.id}'); return false;">${escapeHtml(v.title)}</a>
                     <div class="video-author">${escapeHtml(v.author)} ${verifiedMark}</div>
                     <div class="video-stats">👁️ ${v.views || 0} views</div>
                     <div class="category-badge">${getCategoryName(v.category)}</div>
@@ -208,7 +206,7 @@ function displayVideos(videos) {
 }
 
 // ========= ВОСПРОИЗВЕДЕНИЕ =========
-window.playVideoById = async function(videoId) {
+window.playVideo = async function(videoId) {
     const video = allVideos.find(v => v.id === videoId);
     if (!video) return;
     
@@ -218,18 +216,14 @@ window.playVideoById = async function(videoId) {
         video.views = (video.views || 0) + 1;
     } catch (e) {}
     
-    const authorData = await getUserData(video.userId);
+    document.getElementById("playerTitle").innerText = video.title;
+    document.getElementById("playerAuthor").innerText = video.author;
+    document.getElementById("playerViews").innerText = video.views || 0;
+    document.getElementById("playerCategory").innerText = getCategoryName(video.category);
+    document.getElementById("playerDesc").innerText = video.description || "";
     
-    document.getElementById("playerTitleText").innerText = video.title;
-    document.getElementById("playerAuthorText").innerText = video.author;
-    document.getElementById("playerViewsText").innerText = video.views || 0;
-    document.getElementById("playerCategoryText").innerText = getCategoryName(video.category);
-    document.getElementById("playerDescText").innerText = video.description || "";
-    
-    const verifiedBadgeSmall = document.getElementById("playerVerifiedBadge");
-    if (verifiedBadgeSmall) {
-        verifiedBadgeSmall.style.display = authorData?.verified ? "inline" : "none";
-    }
+    const playerVerified = document.getElementById("playerVerified");
+    if (playerVerified) playerVerified.style.display = video.authorVerified ? "inline" : "none";
     
     const container = document.getElementById("playerContainer");
     const vidId = video.isFile ? video.fileUrl : getYouTubeId(video.url);
@@ -277,7 +271,7 @@ async function publishVideo(title, url, category, desc, isShort, isFile = false,
 }
 
 // ========= УДАЛЕНИЕ ВИДЕО =========
-async function deleteVideo(videoId, fileUrl) {
+window.deleteVideo = async function(videoId, fileUrl) {
     if (!confirm("Delete this video?")) return;
     try {
         if (fileUrl) {
@@ -292,11 +286,9 @@ async function deleteVideo(videoId, fileUrl) {
         if (studioModal && studioModal.style.display === "block") loadStudioData();
         if (adminModal && adminModal.style.display === "block") loadAdminData();
     } catch (e) { alert("Error: " + e.message); }
-}
+};
 
-window.deleteVideo = deleteVideo;
-
-// ========= YOUTUBE STUDIO - ПОЛНОСТЬЮ РАБОТАЕТ =========
+// ========= YOUTUBE STUDIO =========
 async function loadStudioData() {
     if (!currentUser) return;
     
@@ -304,8 +296,7 @@ async function loadStudioData() {
         const videosQuery = query(collection(db, "videos"), where("userId", "==", currentUser.uid), orderBy("timestamp", "desc"));
         const videosSnap = await getDocs(videosQuery);
         const userVideos = [];
-        let totalViews = 0;
-        let totalLikes = 0;
+        let totalViews = 0, totalLikes = 0;
         
         videosSnap.forEach(doc => {
             const video = { id: doc.id, ...doc.data() };
@@ -316,88 +307,46 @@ async function loadStudioData() {
         
         const shorts = userVideos.filter(v => v.isShort);
         
-        // Обновляем статистику
         document.getElementById("studioTotalViews").innerText = totalViews;
         document.getElementById("studioTotalVideos").innerText = userVideos.length;
         document.getElementById("studioTotalShorts").innerText = shorts.length;
         document.getElementById("studioTotalLikes").innerText = totalLikes;
-        
-        // Обновляем список видео
-        const filterType = document.getElementById("studioFilterType")?.value || "all";
-        let filteredVideos = userVideos;
-        if (filterType === "videos") filteredVideos = userVideos.filter(v => !v.isShort);
-        if (filterType === "shorts") filteredVideos = userVideos.filter(v => v.isShort);
-        
-        const videosListHtml = filteredVideos.map(v => `
-            <div class="studio-video-item">
-                <div class="studio-video-info">
-                    <div class="studio-video-title">${escapeHtml(v.title)}</div>
-                    <div class="studio-video-stats">
-                        <span>👁️ ${v.views || 0} views</span>
-                        <span>👍 ${v.likes || 0} likes</span>
-                        <span>📅 ${v.timestamp?.toDate?.().toLocaleDateString() || "Recent"}</span>
-                    </div>
-                </div>
-                <div class="studio-video-actions">
-                    <button class="studio-btn-icon edit" onclick="window.editVideo('${v.id}')">✏️ Edit</button>
-                    <button class="studio-btn-icon delete" onclick="window.deleteVideo('${v.id}', '${v.fileUrl || ""}')">🗑️ Delete</button>
-                </div>
-            </div>
-        `).join("");
-        
-        document.getElementById("studioVideosList").innerHTML = videosListHtml || "<p style='color:#aaa; text-align:center;'>No videos yet. Upload your first video!</p>";
-        
-        // Recent Activity
-        const recentHtml = userVideos.slice(0, 5).map(v => `
-            <div class="activity-item">
-                <div class="activity-text">📹 "${escapeHtml(v.title)}" - ${v.views || 0} views</div>
-                <div class="activity-time">${v.timestamp?.toDate?.()?.toLocaleDateString() || "Just now"}</div>
-            </div>
-        `).join("");
-        document.getElementById("studioRecentActivity").innerHTML = recentHtml || "<p>No recent activity</p>";
-        
-        // Channel info
         document.getElementById("studioUserName").innerText = currentUserData?.username || currentUser.displayName || "User";
-        document.getElementById("studioUserSubs").innerText = "0 subscribers";
-        document.getElementById("studioChannelName").value = currentUserData?.username || "";
-        document.getElementById("studioChannelDesc").value = currentUserData?.channelDescription || "";
-        document.getElementById("studioChannelUrl").value = `youtube.com/@${currentUserData?.username || "user"}`;
         
-        // Chart
-        drawStudioChart(userVideos);
+        const filter = document.getElementById("studioFilter")?.value || "all";
+        let filtered = userVideos;
+        if (filter === "videos") filtered = userVideos.filter(v => !v.isShort);
+        if (filter === "shorts") filtered = userVideos.filter(v => v.isShort);
         
-    } catch (e) {
-        console.error("Studio error:", e);
-    }
-}
-
-function drawStudioChart(videos) {
-    const ctx = document.getElementById("studioViewsChart")?.getContext("2d");
-    if (!ctx) return;
-    
-    const last7Days = [];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        last7Days.push(d.toLocaleDateString());
-    }
-    
-    ctx.clearRect(0, 0, 600, 300);
-    ctx.fillStyle = "#1a1a1a";
-    ctx.fillRect(0, 0, 600, 300);
-    ctx.fillStyle = "#cc181e";
-    
-    const barWidth = 50;
-    const maxViews = Math.max(...videos.map(v => v.views || 0), 100);
-    
-    videos.slice(0, 7).forEach((v, i) => {
-        const height = ((v.views || 0) / maxViews) * 200;
-        ctx.fillRect(i * barWidth + 50, 280 - height, barWidth - 5, height);
-        ctx.fillStyle = "#fff";
-        ctx.font = "10px Arial";
-        ctx.fillText(v.views || 0, i * barWidth + 65, 275 - height);
-        ctx.fillStyle = "#cc181e";
-    });
+        const videosListHtml = filtered.map(v => `
+            <div class="video-item">
+                <div class="video-item-info">
+                    <div class="video-item-title">${escapeHtml(v.title)}</div>
+                    <div class="video-item-stats">👁️ ${v.views || 0} views | ${v.isShort ? "Short" : "Video"}</div>
+                </div>
+                <div class="video-item-actions">
+                    <button onclick="window.editVideo('${v.id}')">✏️ Edit</button>
+                    <button class="delete" onclick="window.deleteVideo('${v.id}', '${v.fileUrl || ""}')">🗑️ Delete</button>
+                </div>
+            </div>
+        `).join("");
+        
+        document.getElementById("studioVideosList").innerHTML = videosListHtml || "<p>No videos yet</p>";
+        
+        const recentHtml = userVideos.slice(0, 5).map(v => `
+            <div class="video-item">
+                <div class="video-item-info">
+                    <div class="video-item-title">${escapeHtml(v.title)}</div>
+                    <div class="video-item-stats">${v.views || 0} views</div>
+                </div>
+            </div>
+        `).join("");
+        document.getElementById("studioRecentVideos").innerHTML = recentHtml || "<p>No videos</p>";
+        
+        document.getElementById("channelNameInput").value = currentUserData?.username || "";
+        document.getElementById("channelDescInput").value = currentUserData?.channelDescription || "";
+        
+    } catch (e) { console.error(e); }
 }
 
 window.editVideo = async function(videoId) {
@@ -417,8 +366,8 @@ async function loadAdminData() {
     try {
         const usersSnap = await getDocs(collection(db, "users"));
         const videosSnap = await getDocs(collection(db, "videos"));
-        const verifiedSnap = await getDocs(query(collection(db, "users"), where("verified", "==", true)));
         const shortsSnap = await getDocs(query(collection(db, "videos"), where("isShort", "==", true)));
+        const verifiedSnap = await getDocs(query(collection(db, "users"), where("verified", "==", true)));
         
         document.getElementById("adminTotalUsers").innerText = usersSnap.size;
         document.getElementById("adminTotalVideos").innerText = videosSnap.size;
@@ -427,8 +376,7 @@ async function loadAdminData() {
         
         await loadAdminUsers();
         await loadAdminVideos();
-        
-    } catch (e) { console.error("Admin error:", e); }
+    } catch (e) { console.error(e); }
 }
 
 async function loadAdminUsers() {
@@ -440,23 +388,19 @@ async function loadAdminUsers() {
     const filtered = users.filter(u => u.username?.toLowerCase().includes(searchTerm) || u.email?.toLowerCase().includes(searchTerm));
     
     const listHtml = filtered.map(u => `
-        <div class="admin-user-item">
-            <div class="admin-user-info">
-                <div class="admin-user-name">
-                    ${escapeHtml(u.username)}
-                    ${u.verified ? '<span class="admin-user-verified">✓ Verified</span>' : ''}
-                </div>
-                <div class="admin-user-email">${escapeHtml(u.email)}</div>
-                <div>Joined: ${u.createdAt?.toDate?.()?.toLocaleDateString() || "Unknown"}</div>
+        <div class="user-item">
+            <div class="user-info">
+                <div class="user-name">${escapeHtml(u.username)} ${u.verified ? '<span class="user-verified">✓ Verified</span>' : ''}</div>
+                <div class="user-email">${escapeHtml(u.email)}</div>
             </div>
             <div class="admin-actions">
-                ${!u.verified ? `<button class="admin-btn verify" onclick="window.verifyUser('${u.uid}')">✓ Verify</button>` : ""}
-                <button class="admin-btn delete" onclick="window.deleteUser('${u.uid}')">🗑️ Delete</button>
+                ${!u.verified ? `<button class="admin-btn verify" onclick="window.verifyUser('${u.uid}')">Verify</button>` : ""}
+                <button class="admin-btn delete" onclick="window.deleteUserAccount('${u.uid}')">Delete</button>
             </div>
         </div>
     `).join("");
     
-    document.getElementById("adminUsersList").innerHTML = listHtml || "<p>No users found</p>";
+    document.getElementById("adminUsersList").innerHTML = listHtml || "<p>No users</p>";
 }
 
 async function loadAdminVideos() {
@@ -468,26 +412,23 @@ async function loadAdminVideos() {
     const filterType = document.getElementById("adminVideoFilter")?.value || "all";
     
     let filtered = videos;
-    if (searchTerm) {
-        filtered = filtered.filter(v => v.title?.toLowerCase().includes(searchTerm) || v.author?.toLowerCase().includes(searchTerm));
-    }
+    if (searchTerm) filtered = filtered.filter(v => v.title?.toLowerCase().includes(searchTerm) || v.author?.toLowerCase().includes(searchTerm));
     if (filterType === "videos") filtered = filtered.filter(v => !v.isShort);
     if (filterType === "shorts") filtered = filtered.filter(v => v.isShort);
     
     const listHtml = filtered.map(v => `
         <div class="admin-video-item">
-            <div class="admin-video-info">
-                <div class="admin-user-name">${escapeHtml(v.title)}</div>
-                <div>Author: ${escapeHtml(v.author)} | Views: ${v.views || 0} | ${v.isShort ? "📱 Short" : "📹 Video"}</div>
-                <div>Category: ${getCategoryName(v.category)}</div>
+            <div class="video-item-info">
+                <div class="video-item-title">${escapeHtml(v.title)}</div>
+                <div class="video-item-stats">${escapeHtml(v.author)} | ${v.views || 0} views | ${v.isShort ? "Short" : "Video"}</div>
             </div>
             <div class="admin-actions">
-                <button class="admin-btn delete" onclick="window.deleteVideo('${v.id}', '${v.fileUrl || ""}')">🗑️ Delete</button>
+                <button class="admin-btn delete" onclick="window.deleteVideo('${v.id}', '${v.fileUrl || ""}')">Delete</button>
             </div>
         </div>
     `).join("");
     
-    document.getElementById("adminVideosList").innerHTML = listHtml || "<p>No videos found</p>";
+    document.getElementById("adminVideosList").innerHTML = listHtml || "<p>No videos</p>";
 }
 
 window.verifyUser = async function(uid) {
@@ -499,7 +440,7 @@ window.verifyUser = async function(uid) {
     } catch (e) { alert("Error: " + e.message); }
 };
 
-window.deleteUser = async function(uid) {
+window.deleteUserAccount = async function(uid) {
     if (!confirm("Delete user? This will also delete their videos!")) return;
     try {
         const videosSnap = await getDocs(query(collection(db, "videos"), where("userId", "==", uid)));
@@ -524,23 +465,23 @@ window.deleteUser = async function(uid) {
 function searchVideos() {
     const term = searchInput.value.toLowerCase();
     if (!term) return displayVideos(allVideos);
-    const filtered = allVideos.filter(v => 
-        v.title.toLowerCase().includes(term) || 
-        v.author.toLowerCase().includes(term)
-    );
+    const filtered = allVideos.filter(v => v.title.toLowerCase().includes(term) || v.author.toLowerCase().includes(term));
     displayVideos(filtered);
 }
 
 // ========= СОБЫТИЯ =========
 function initEvents() {
-    // Навигация по категориям
-    document.querySelectorAll("[data-category]").forEach(link => {
+    // Категории - главная навигация
+    document.querySelectorAll(".nav-link, .cat-list a").forEach(link => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
-            currentCategory = link.dataset.category;
-            loadVideos();
-            document.querySelectorAll(".nav-item, .cat-list a").forEach(a => a.classList.remove("active"));
-            link.classList.add("active");
+            const category = link.getAttribute("data-category");
+            if (category) {
+                currentCategory = category;
+                loadVideos();
+                document.querySelectorAll(".nav-link, .cat-list a").forEach(a => a.classList.remove("active"));
+                link.classList.add("active");
+            }
         });
     });
     
@@ -552,11 +493,11 @@ function initEvents() {
     if (sourceType) {
         sourceType.onchange = () => {
             if (sourceType.value === "youtube") {
-                if (youtubeRow) youtubeRow.style.display = "block";
-                if (fileRow) fileRow.style.display = "none";
+                if (youtubeGroup) youtubeGroup.style.display = "block";
+                if (fileGroup) fileGroup.style.display = "none";
             } else {
-                if (youtubeRow) youtubeRow.style.display = "none";
-                if (fileRow) fileRow.style.display = "block";
+                if (youtubeGroup) youtubeGroup.style.display = "none";
+                if (fileGroup) fileGroup.style.display = "block";
             }
         };
     }
@@ -596,7 +537,7 @@ function initEvents() {
     }
     
     // Закрытие модалок
-    document.querySelectorAll(".close-modal, .studio-close, .admin-close").forEach(close => {
+    document.querySelectorAll(".close, .close-studio, .close-admin").forEach(close => {
         close.onclick = () => {
             if (uploadModal) uploadModal.style.display = "none";
             if (loginModal) loginModal.style.display = "none";
@@ -608,39 +549,38 @@ function initEvents() {
     });
     
     // Studio Tabs
-    document.querySelectorAll(".studio-nav-item").forEach(tab => {
-        tab.onclick = (e) => {
-            e.preventDefault();
-            const tabName = tab.dataset.studioTab;
-            document.querySelectorAll(".studio-nav-item").forEach(t => t.classList.remove("active"));
-            document.querySelectorAll(".studio-tab-pane").forEach(p => p.style.display = "none");
-            tab.classList.add("active");
-            const pane = document.getElementById(`studio${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`);
+    document.querySelectorAll(".studio-nav-btn").forEach(btn => {
+        btn.onclick = () => {
+            const tab = btn.getAttribute("data-studio");
+            document.querySelectorAll(".studio-nav-btn").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".studio-pane").forEach(p => p.style.display = "none");
+            btn.classList.add("active");
+            const pane = document.getElementById(`studio${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
             if (pane) pane.style.display = "block";
-            document.getElementById("studioPageTitle").innerText = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+            document.getElementById("studioTitle").innerText = tab.charAt(0).toUpperCase() + tab.slice(1);
         };
     });
     
     // Admin Tabs
-    document.querySelectorAll(".admin-nav-item").forEach(tab => {
-        tab.onclick = (e) => {
-            e.preventDefault();
-            const tabName = tab.dataset.adminTab;
-            document.querySelectorAll(".admin-nav-item").forEach(t => t.classList.remove("active"));
-            document.querySelectorAll(".admin-tab-pane").forEach(p => p.style.display = "none");
-            tab.classList.add("active");
-            const pane = document.getElementById(`admin${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`);
+    document.querySelectorAll(".admin-nav-btn").forEach(btn => {
+        btn.onclick = () => {
+            const tab = btn.getAttribute("data-admin");
+            document.querySelectorAll(".admin-nav-btn").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".admin-pane").forEach(p => p.style.display = "none");
+            btn.classList.add("active");
+            const pane = document.getElementById(`admin${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
             if (pane) pane.style.display = "block";
-            document.getElementById("adminPageTitle").innerText = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+            document.getElementById("adminTitle").innerText = tab.charAt(0).toUpperCase() + tab.slice(1);
         };
     });
     
-    // Фильтры в студии
-    const filterSelect = document.getElementById("studioFilterType");
-    if (filterSelect) filterSelect.onchange = () => loadStudioData();
+    // Studio filter
+    const studioFilter = document.getElementById("studioFilter");
+    if (studioFilter) studioFilter.onchange = () => loadStudioData();
     
-    const adminSearch = document.getElementById("adminUserSearch");
-    if (adminSearch) adminSearch.oninput = () => loadAdminUsers();
+    // Admin search/filter
+    const adminUserSearch = document.getElementById("adminUserSearch");
+    if (adminUserSearch) adminUserSearch.oninput = () => loadAdminUsers();
     
     const adminVideoSearch = document.getElementById("adminVideoSearch");
     if (adminVideoSearch) adminVideoSearch.oninput = () => loadAdminVideos();
@@ -658,12 +598,12 @@ function initEvents() {
     }
     
     // Save settings
-    const saveSettings = document.getElementById("saveStudioSettings");
-    if (saveSettings) {
-        saveSettings.onclick = async () => {
+    const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+    if (saveSettingsBtn) {
+        saveSettingsBtn.onclick = async () => {
             if (!currentUser) return;
-            const channelName = document.getElementById("studioChannelName").value;
-            const channelDesc = document.getElementById("studioChannelDesc").value;
+            const channelName = document.getElementById("channelNameInput").value;
+            const channelDesc = document.getElementById("channelDescInput").value;
             await updateDoc(doc(db, "users", currentUser.uid), {
                 username: channelName, channelDescription: channelDesc
             });
@@ -698,9 +638,9 @@ function initEvents() {
     if (registerForm) {
         registerForm.onsubmit = async (e) => {
             e.preventDefault();
-            const username = document.getElementById("regUsernameField").value;
-            const email = document.getElementById("regEmailField").value;
-            const password = document.getElementById("regPasswordField").value;
+            const username = document.getElementById("regUsername").value;
+            const email = document.getElementById("regEmail").value;
+            const password = document.getElementById("regPassword").value;
             
             if (password.length < 6) {
                 alert("Password must be at least 6 chars");
@@ -726,8 +666,8 @@ function initEvents() {
     if (loginForm) {
         loginForm.onsubmit = async (e) => {
             e.preventDefault();
-            const email = document.getElementById("loginEmailField").value;
-            const password = document.getElementById("loginPasswordField").value;
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 if (loginModal) loginModal.style.display = "none";
@@ -743,7 +683,7 @@ function initEvents() {
             e.preventDefault();
             const title = videoTitle.value;
             const category = videoCategory.value;
-            const desc = videoDesc.value;
+            const desc = videoDescription.value;
             const isShort = isShortCheck.checked;
             const type = sourceType.value;
             
@@ -752,7 +692,7 @@ function initEvents() {
             let url = "", fileUrl = null, isFile = false;
             
             if (type === "youtube") {
-                url = youtubeLink.value;
+                url = youtubeUrl.value;
                 if (!url) { alert("Enter YouTube URL"); return; }
             } else {
                 const file = videoFile.files[0];
@@ -768,15 +708,16 @@ function initEvents() {
             if (uploadModal) uploadModal.style.display = "none";
             uploadForm.reset();
             if (isShortCheck) isShortCheck.checked = false;
-            if (sourceType) sourceType.value = "youtube";
-            if (youtubeRow) youtubeRow.style.display = "block";
-            if (fileRow) fileRow.style.display = "none";
         };
     }
     
-    if (logoutBtn) {
-        logoutBtn.onclick = async () => { await signOut(auth); };
-    }
+    // Переключение форм
+    const showRegister = document.getElementById("showRegister");
+    const showLogin = document.getElementById("showLogin");
+    if (showRegister) showRegister.onclick = (e) => { e.preventDefault(); loginModal.style.display = "none"; registerModal.style.display = "block"; };
+    if (showLogin) showLogin.onclick = (e) => { e.preventDefault(); registerModal.style.display = "none"; loginModal.style.display = "block"; };
+    
+    if (logoutBtn) logoutBtn.onclick = async () => { await signOut(auth); };
     
     window.onclick = (e) => {
         if (e.target.classList.contains("modal")) {
@@ -798,12 +739,8 @@ onAuthStateChanged(auth, async (user) => {
         if (unauthDiv) unauthDiv.style.display = "none";
         if (authDiv) authDiv.style.display = "flex";
         if (usernameSpan) usernameSpan.innerText = currentUserData?.username || user.displayName || user.email.split("@")[0];
+        if (verifiedBadge) verifiedBadge.style.display = currentUserData?.verified ? "inline" : "none";
         
-        if (verifiedBadge) {
-            verifiedBadge.style.display = currentUserData?.verified ? "inline" : "none";
-        }
-        
-        // Показываем админ панель для админа
         if (adminPanelBtn) {
             if (user.email === "admin@youtube.com" || currentUserData?.isAdmin) {
                 adminPanelBtn.style.display = "inline-block";
@@ -826,4 +763,4 @@ onAuthStateChanged(auth, async (user) => {
 
 // ========= ЗАПУСК =========
 initEvents();
-console.log("🚀 YouTube 2008 Running with Studio & Admin Panel!");
+console.log("🚀 YouTube 2008 Running!");

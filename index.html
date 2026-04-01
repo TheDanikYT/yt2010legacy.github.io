@@ -8,9 +8,9 @@
 </head>
 <body>
     <div class="wrapper">
-        <!-- Шапка 2008 -->
+        <!-- Шапка -->
         <div class="header">
-            <div class="logo-area">
+            <div class="logo-area" onclick="location.reload()">
                 <div class="youtube-logo">
                     <span class="red">You</span><span class="dark">Tube</span>
                 </div>
@@ -27,6 +27,8 @@
                 </div>
                 <div id="authButtons" style="display:none;">
                     <span id="usernameSpan" class="username"></span>
+                    <span id="verifiedBadge" class="verified-badge" style="display:none;">✓</span>
+                    <button id="studioBtn" class="studio-btn">Studio</button>
                     <button id="uploadTopBtn" class="upload-btn">Upload</button>
                     <button id="logoutBtn" class="nav-btn">Sign Out</button>
                 </div>
@@ -40,6 +42,7 @@
             <a href="#" data-category="recent" class="nav-item">Recent</a>
             <a href="#" data-category="shorts" class="nav-item">Shorts</a>
             <a href="#" data-category="my" class="nav-item">My Videos</a>
+            <a href="#" id="adminPanelBtn" class="nav-item admin-link" style="display:none;">Admin</a>
         </div>
 
         <!-- Основной контент -->
@@ -49,11 +52,12 @@
                 <div class="sidebar-box">
                     <h4>Categories</h4>
                     <ul class="cat-list">
-                        <li><a href="#" data-category="all">All Videos</a></li>
-                        <li><a href="#" data-category="music">Music</a></li>
-                        <li><a href="#" data-category="gaming">Gaming</a></li>
-                        <li><a href="#" data-category="comedy">Comedy</a></li>
-                        <li><a href="#" data-category="education">Education</a></li>
+                        <li><a href="#" data-category="all">📺 All Videos</a></li>
+                        <li><a href="#" data-category="music">🎵 Music</a></li>
+                        <li><a href="#" data-category="gaming">🎮 Gaming</a></li>
+                        <li><a href="#" data-category="comedy">😂 Comedy</a></li>
+                        <li><a href="#" data-category="education">📚 Education</a></li>
+                        <li><a href="#" data-category="shorts">📱 Shorts</a></li>
                     </ul>
                 </div>
                 <div class="sidebar-box">
@@ -62,6 +66,7 @@
                         <p>👥 Users: <span id="statUsers">0</span></p>
                         <p>🎬 Videos: <span id="statVideos">0</span></p>
                         <p>📱 Shorts: <span id="statShorts">0</span></p>
+                        <p>✓ Verified: <span id="statVerified">0</span></p>
                     </div>
                 </div>
                 <div class="sidebar-box">
@@ -187,9 +192,86 @@
             </div>
             <div id="playerContainer" class="player-box"></div>
             <div class="player-info">
-                <p><strong>Author:</strong> <span id="playerAuthorText"></span></p>
+                <p><strong>Author:</strong> <span id="playerAuthorText"></span> <span id="playerVerifiedBadge" class="verified-badge-small" style="display:none;">✓</span></p>
                 <p><strong>Views:</strong> <span id="playerViewsText"></span></p>
+                <p><strong>Category:</strong> <span id="playerCategoryText"></span></p>
                 <p id="playerDescText"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube Studio панель -->
+    <div id="studioWindow" class="modal studio-modal">
+        <div class="modal-inner studio-inner">
+            <div class="modal-head">
+                <h3>YouTube Studio</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="studio-tabs">
+                <button class="studio-tab active" data-tab="videos">My Videos</button>
+                <button class="studio-tab" data-tab="analytics">Analytics</button>
+                <button class="studio-tab" data-tab="settings">Channel Settings</button>
+            </div>
+            <div id="studioVideosTab" class="studio-tab-content active">
+                <div id="myVideosList" class="studio-videos-list"></div>
+            </div>
+            <div id="studioAnalyticsTab" class="studio-tab-content" style="display:none;">
+                <div class="analytics-stats">
+                    <div class="analytics-card">
+                        <h4>Total Views</h4>
+                        <p id="studioTotalViews">0</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>Total Videos</h4>
+                        <p id="studioTotalVideos">0</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>Total Shorts</h4>
+                        <p id="studioTotalShorts">0</p>
+                    </div>
+                </div>
+                <canvas id="viewsChart" width="400" height="200" style="background:#fff; margin-top:20px;"></canvas>
+            </div>
+            <div id="studioSettingsTab" class="studio-tab-content" style="display:none;">
+                <div class="form-row">
+                    <label>Channel Name:</label>
+                    <input type="text" id="channelName" class="form-input">
+                </div>
+                <div class="form-row">
+                    <label>Channel Description:</label>
+                    <textarea id="channelDesc" rows="3" class="form-input"></textarea>
+                </div>
+                <button id="saveChannelSettings" class="publish-btn">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Админ панель -->
+    <div id="adminWindow" class="modal admin-modal">
+        <div class="modal-inner admin-inner">
+            <div class="modal-head">
+                <h3>Admin Panel</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-tab="users">Users Management</button>
+                <button class="admin-tab" data-tab="videos">Videos Management</button>
+                <button class="admin-tab" data-tab="reports">Reports</button>
+            </div>
+            <div id="adminUsersTab" class="admin-tab-content active">
+                <div id="usersList" class="admin-users-list"></div>
+            </div>
+            <div id="adminVideosTab" class="admin-tab-content" style="display:none;">
+                <div id="adminVideosList" class="admin-videos-list"></div>
+            </div>
+            <div id="adminReportsTab" class="admin-tab-content" style="display:none;">
+                <div class="reports-stats">
+                    <h4>System Reports</h4>
+                    <p>Total Users: <span id="reportTotalUsers">0</span></p>
+                    <p>Total Videos: <span id="reportTotalVideos">0</span></p>
+                    <p>Total Shorts: <span id="reportTotalShorts">0</span></p>
+                    <p>Verified Users: <span id="reportVerifiedUsers">0</span></p>
+                </div>
             </div>
         </div>
     </div>

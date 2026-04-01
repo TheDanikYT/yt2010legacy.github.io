@@ -5,137 +5,133 @@
 }
 
 body {
-    font-family: 'Trebuchet MS', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-    background: #E9E9E9;
+    background: #e5e5e5;
+    font-family: 'Trebuchet MS', 'Lucida Grande', Arial, sans-serif;
     font-size: 12px;
-    color: #333;
+    color: #222;
 }
 
-/* Старая шапка YouTube */
-.container {
+.wrapper {
     max-width: 1280px;
     margin: 0 auto;
-    background: #FFF;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    background: white;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
 }
 
+/* ========= HEADER 2008 ========= */
 .header {
-    background: #F1F1F1;
-    padding: 10px 20px;
-    border-bottom: 1px solid #DDD;
+    background: #f5f5f5;
+    padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(to bottom, #FEFEFE 0%, #F1F1F1 100%);
+    border-bottom: 1px solid #ddd;
+    background: linear-gradient(to bottom, #fff 0%, #f1f1f1 100%);
 }
 
-.header-left {
-    cursor: pointer;
-}
-
-.logo {
+.youtube-logo {
     font-size: 28px;
     font-weight: bold;
     letter-spacing: -1px;
 }
 
-.you {
-    color: #CC181E;
+.youtube-logo .red {
+    color: #cc181e;
 }
 
-.tube {
-    color: #333;
+.youtube-logo .dark {
+    color: #282828;
 }
 
-.slogan {
+.tagline {
     font-size: 9px;
     color: #666;
-    margin-top: 2px;
     font-style: italic;
+    margin-top: 2px;
 }
 
-.header-center {
-    flex: 1;
-    margin: 0 40px;
-}
-
-.search-box {
+.search-area {
     display: flex;
     gap: 0;
-}
-
-.search-input {
     flex: 1;
-    padding: 6px 10px;
-    border: 1px solid #CCC;
-    font-size: 13px;
-    font-family: 'Courier New', monospace;
-    background: #FFF;
+    max-width: 500px;
+    margin: 0 30px;
 }
 
-.search-button {
-    padding: 6px 15px;
-    background: #F0F0F0;
-    border: 1px solid #CCC;
+.search-field {
+    flex: 1;
+    padding: 7px 10px;
+    border: 1px solid #aaa;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    background: white;
+}
+
+.search-submit {
+    padding: 7px 15px;
+    background: #e6e6e6;
+    border: 1px solid #aaa;
     border-left: none;
     cursor: pointer;
-    font-size: 11px;
     font-weight: bold;
-    color: #333;
+    font-size: 11px;
 }
 
-.search-button:hover {
-    background: #E0E0E0;
+.search-submit:hover {
+    background: #d6d6d6;
 }
 
-.header-button, .upload-button {
+.user-area {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.nav-btn {
     padding: 5px 12px;
-    background: #F0F0F0;
-    border: 1px solid #AAA;
+    background: #e6e6e6;
+    border: 1px solid #aaa;
     cursor: pointer;
     font-size: 11px;
     font-weight: bold;
-    margin-left: 5px;
-    font-family: 'Trebuchet MS', sans-serif;
 }
 
-.header-button:hover, .upload-button:hover {
-    background: #E0E0E0;
-    border-color: #999;
+.nav-btn:hover {
+    background: #d6d6d6;
 }
 
-.upload-button {
-    background: #CC181E;
+.upload-btn {
+    padding: 5px 12px;
+    background: #cc181e;
+    border: 1px solid #aa1419;
     color: white;
-    border-color: #AA1419;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
 }
 
-.upload-button:hover {
-    background: #AA1419;
+.upload-btn:hover {
+    background: #aa1419;
 }
 
 .username {
     font-weight: bold;
-    color: #CC181E;
-    margin-right: 10px;
+    color: #cc181e;
+    margin-right: 8px;
 }
 
-/* Навигация */
-.nav-bar {
-    background: #F8F8F8;
-    border-bottom: 1px solid #DDD;
+/* ========= NAVIGATION ========= */
+.top-nav {
+    background: #f8f8f8;
     padding: 0 20px;
-}
-
-.nav-links {
+    border-bottom: 1px solid #ddd;
     display: flex;
     gap: 25px;
 }
 
-.nav-link {
-    display: inline-block;
+.nav-item {
     padding: 8px 0;
-    color: #666;
+    color: #555;
     text-decoration: none;
     font-size: 11px;
     font-weight: bold;
@@ -143,112 +139,119 @@ body {
     border-bottom: 2px solid transparent;
 }
 
-.nav-link:hover, .nav-link.active {
-    color: #CC181E;
-    border-bottom-color: #CC181E;
+.nav-item:hover, .nav-item.active {
+    color: #cc181e;
+    border-bottom-color: #cc181e;
 }
 
-/* Основной макет */
-.main-layout {
+/* ========= MAIN LAYOUT ========= */
+.main-row {
     display: flex;
     padding: 20px;
     gap: 20px;
-    background: #FFF;
 }
 
-/* Сайдбар */
-.sidebar {
+/* ========= SIDEBAR ========= */
+.left-sidebar {
     width: 220px;
+    flex-shrink: 0;
 }
 
-.sidebar-section {
-    background: #F9F9F9;
-    border: 1px solid #E0E0E0;
+.sidebar-box {
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
     margin-bottom: 15px;
-    padding: 10px;
+    padding: 12px;
 }
 
-.sidebar-section h3 {
-    font-size: 12px;
+.sidebar-box h4 {
+    font-size: 11px;
     font-weight: bold;
-    color: #CC181E;
+    color: #cc181e;
     margin-bottom: 10px;
-    border-bottom: 1px solid #E0E0E0;
     padding-bottom: 5px;
+    border-bottom: 1px solid #e0e0e0;
     text-transform: uppercase;
 }
 
-.category-list {
+.cat-list {
     list-style: none;
 }
 
-.category-list li {
+.cat-list li {
     margin-bottom: 6px;
 }
 
-.category-list a {
-    color: #0066CC;
+.cat-list a {
+    color: #0066cc;
     text-decoration: none;
     font-size: 11px;
 }
 
-.category-list a:hover {
-    color: #CC181E;
+.cat-list a:hover {
+    color: #cc181e;
     text-decoration: underline;
 }
 
-.stats-box {
-    font-size: 11px;
-}
-
-.stats-box p {
+.stats-info p {
     margin: 5px 0;
-    color: #666;
+    font-size: 11px;
+    color: #555;
 }
 
-.stats-box span {
-    color: #CC181E;
+.stats-info span {
+    color: #cc181e;
     font-weight: bold;
 }
 
-.sidebar-upload {
+.side-upload-btn {
     width: 100%;
     padding: 8px;
     margin-bottom: 8px;
-    background: #F0F0F0;
-    border: 1px solid #CCC;
+    background: #e6e6e6;
+    border: 1px solid #ccc;
     cursor: pointer;
     font-size: 11px;
     font-weight: bold;
     text-align: center;
 }
 
-.sidebar-upload:hover {
-    background: #E0E0E0;
+.side-upload-btn:hover {
+    background: #d6d6d6;
 }
 
-/* Сетка видео */
-.content {
+.side-upload-btn.short {
+    background: #cc181e;
+    color: white;
+    border-color: #aa1419;
+}
+
+.side-upload-btn.short:hover {
+    background: #aa1419;
+}
+
+/* ========= VIDEO GRID ========= */
+.content-area {
     flex: 1;
 }
 
-.videos-grid {
+.video-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
 }
 
 .video-card {
-    background: #FFF;
-    border: 1px solid #E0E0E0;
+    border: 1px solid #e0e0e0;
+    background: white;
     transition: border-color 0.1s;
 }
 
 .video-card:hover {
-    border-color: #CC181E;
+    border-color: #cc181e;
 }
 
-.video-thumbnail {
+.thumbnail {
     position: relative;
     background: #000;
     height: 160px;
@@ -256,51 +259,44 @@ body {
     cursor: pointer;
 }
 
-.video-thumbnail img, .video-thumbnail video {
+.thumbnail img, .thumbnail video, .thumbnail iframe {
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-
-.video-thumbnail iframe {
-    width: 100%;
-    height: 100%;
     pointer-events: none;
 }
 
-.video-duration {
+.duration {
     position: absolute;
     bottom: 5px;
     right: 5px;
     background: rgba(0,0,0,0.7);
-    color: #FFF;
+    color: white;
     padding: 2px 5px;
     font-size: 10px;
     font-family: monospace;
-    border-radius: 2px;
 }
 
-.short-badge {
+.short-tag {
     position: absolute;
     top: 5px;
     right: 5px;
-    background: #CC181E;
+    background: #cc181e;
     color: white;
     padding: 2px 6px;
     font-size: 9px;
     font-weight: bold;
-    text-transform: uppercase;
 }
 
-.video-info {
+.video-details {
     padding: 8px;
-    background: #FAFAFA;
+    background: #fefefe;
 }
 
 .video-title {
     font-size: 12px;
     font-weight: bold;
-    color: #0066CC;
+    color: #0066cc;
     text-decoration: none;
     display: block;
     margin-bottom: 5px;
@@ -308,7 +304,7 @@ body {
 }
 
 .video-title:hover {
-    color: #CC181E;
+    color: #cc181e;
     text-decoration: underline;
 }
 
@@ -324,24 +320,41 @@ body {
     margin-bottom: 4px;
 }
 
-.category-tag {
+.category-badge {
     display: inline-block;
-    background: #F0F0F0;
+    background: #f0f0f0;
     padding: 2px 6px;
     font-size: 9px;
-    border: 1px solid #E0E0E0;
-    color: #666;
+    border: 1px solid #ddd;
 }
 
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-    font-family: monospace;
-    font-size: 12px;
+/* ========= SHORTS GRID ========= */
+.shorts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
 }
 
-/* Модальные окна */
+.shorts-card {
+    border: 1px solid #e0e0e0;
+    background: white;
+}
+
+.shorts-thumb {
+    position: relative;
+    background: #000;
+    height: 350px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.shorts-thumb video, .shorts-thumb iframe {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ========= MODALS ========= */
 .modal {
     display: none;
     position: fixed;
@@ -353,166 +366,142 @@ body {
     background: rgba(0,0,0,0.6);
 }
 
-.modal-content {
-    background: #FFF;
-    margin: 50px auto;
+.modal-inner {
+    background: white;
     width: 500px;
-    border: 2px solid #AAA;
+    margin: 60px auto;
+    border: 2px solid #aaa;
     box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
 }
 
-.video-modal-content {
+.player-inner {
     width: 800px;
 }
 
-.modal-header {
-    background: #F1F1F1;
+.modal-head {
+    background: #f1f1f1;
     padding: 10px 15px;
-    border-bottom: 1px solid #DDD;
+    border-bottom: 1px solid #ddd;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.modal-header h2 {
+.modal-head h3 {
     font-size: 14px;
     color: #333;
 }
 
-.close {
+.close-modal {
     font-size: 24px;
     cursor: pointer;
     color: #666;
 }
 
-.close:hover {
-    color: #CC181E;
+.close-modal:hover {
+    color: #cc181e;
 }
 
-.form-group {
+.form-row {
     margin: 15px;
 }
 
-.form-group label {
+.form-row label {
     display: block;
     font-size: 11px;
     font-weight: bold;
     margin-bottom: 5px;
-    color: #333;
 }
 
-.form-control {
+.form-input {
     width: 100%;
     padding: 6px 8px;
-    border: 1px solid #CCC;
+    border: 1px solid #ccc;
     font-size: 11px;
-    font-family: 'Courier New', monospace;
+    font-family: monospace;
 }
 
-.form-control:focus {
+.form-input:focus {
     outline: none;
-    border-color: #CC181E;
+    border-color: #cc181e;
 }
 
-.submit-btn {
+.publish-btn {
     width: calc(100% - 30px);
     margin: 0 15px 15px 15px;
     padding: 8px;
-    background: #CC181E;
+    background: #cc181e;
     color: white;
     border: none;
     cursor: pointer;
-    font-size: 12px;
     font-weight: bold;
 }
 
-.submit-btn:hover {
-    background: #AA1419;
+.publish-btn:hover {
+    background: #aa1419;
 }
 
-.modal-footer {
+.form-footer {
     text-align: center;
     padding: 10px;
-    border-top: 1px solid #EEE;
+    border-top: 1px solid #eee;
     font-size: 11px;
 }
 
-.modal-footer a {
-    color: #0066CC;
+.form-footer a {
+    color: #0066cc;
     text-decoration: none;
 }
 
-.modal-footer a:hover {
-    color: #CC181E;
+.form-footer a:hover {
+    color: #cc181e;
 }
 
-/* Видео плеер */
-.video-player-container {
+/* ========= PLAYER ========= */
+.player-box {
     background: #000;
-    min-height: 400px;
+    min-height: 450px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.video-player-container video, 
-.video-player-container iframe {
+.player-box video, .player-box iframe {
     width: 100%;
     height: 450px;
 }
 
-.video-details {
+.player-info {
     padding: 15px;
 }
 
-.video-details p {
+.player-info p {
     margin: 8px 0;
     font-size: 12px;
 }
 
-/* Shorts стиль */
-.shorts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
+.loading-spinner {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-family: monospace;
 }
 
-.shorts-card {
-    background: #FFF;
-    border: 1px solid #E0E0E0;
-}
-
-.shorts-thumbnail {
-    position: relative;
-    background: #000;
-    height: 350px;
-    overflow: hidden;
-    cursor: pointer;
-}
-
-.shorts-thumbnail video, 
-.shorts-thumbnail iframe {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* Адаптивность */
+/* ========= RESPONSIVE ========= */
 @media (max-width: 768px) {
-    .main-layout {
+    .main-row {
         flex-direction: column;
     }
     
-    .sidebar {
+    .left-sidebar {
         width: 100%;
     }
     
-    .header-center {
+    .search-area {
         margin: 0 10px;
     }
     
-    .video-modal-content {
+    .player-inner {
         width: 95%;
-        margin: 20px auto;
     }
 }
